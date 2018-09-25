@@ -5,9 +5,9 @@
 ###########
 
 if(Sys.info()["user"] != 'anita'){
-  setwd('~/timz/timothy/point_polygon_joint_comparison')
+  setwd('~/timz/timothy/polygon_ml_wsc')
 } else {
-  setwd('~/Z/users/anita/point_polygon_join_comparison_analysis')
+  #setwd('~/Z/users/anita/point_polygon_join_comparison_analysis')
 }
 
 source("setUserInfo.R")
@@ -101,18 +101,22 @@ data <- load_data(PR_path,
                   cov_raster_paths, 
                   shapefile_path, 
                   shapefile_pattern = '.shp$', 
-                  useiso3 = 'IDN', 
+                  useiso3 = 'COL', 
+                  admin_unit_level = 'ADMIN2',
                   # pr_year = 2008,
                   # api_year = 2014)
-                  pr_year = 2010,
-                  api_year = 2012)
+                  pr_year = 2011,
+                  api_year = 2015)
 
 
-# indonesia
+
+# Train ML models
+
+
 
 # pre analysis
 
-data_idn <- process_data(
+data_col <- process_data(
   binomial_positive = data$pr$positive,
   binomial_n = data$pr$examined,
   coords = data$pr[, c('longitude', 'latitude')],
@@ -123,34 +127,36 @@ data_idn <- process_data(
   shapefiles = data$shapefiles,
   pop_raster = data$pop,
   cov_rasters = data$covs,
-  useiso3 = 'IDN',
+  useiso3 = 'COL',
   transform = c(4:7))
-save(data_idn, file = 'model_outputs/idn_full_data.RData')
+save(data_col, file = 'model_outputs/col_full_data.RData')
 
-autoplot(data_idn, pr_limits = c(0, 0.3))
-ggsave('figs/idn_input_data.png')
+autoplot(data_col, pr_limits = c(0, 0.3))
+autoplot(data_col, pr_limits = c(0, 0.3), trans = 'log1p')
 
-mesh_idn <- build_mesh(data_idn, mesh.args = list(max.edge = c(0.5, 5), cut = 0.5))
-autoplot(mesh_idn)
-save(mesh_idn, file = 'model_outputs/idn_mesh.RData')
+ggsave('figs/col_input_data.png')
+
+mesh_col <- build_mesh(data_col, mesh.args = list(max.edge = c(0.5, 5), cut = 0.5))
+autoplot(mesh_col)
+save(mesh_col, file = 'model_outputs/col_mesh.RData')
 
 
 
 # Define cross validation strategies
-data_cv1_idn <- cv_random_folds(data_idn, k = 10)
-autoplot(data_cv1_idn, jitter = 0.7)
-ggsave('figs/idn_cv_random.png')
-save(data_cv1_idn, file = 'model_outputs/idn_cv_1.RData')
+data_cv1_col <- cv_random_folds(data_col, k = 10)
+autoplot(data_cv1_col, jitter = 0.7)
+ggsave('figs/col_cv_random.png')
+save(data_cv1_col, file = 'model_outputs/col_cv_1.RData')
 
 
 # Spatial
-data_cv2_idn <- cv_spatial_folds(data_idn, k = 7)
-autoplot(data_cv2_idn, jitter = 0.7)
-ggsave('figs/idn_cv_spatial2.png')
-save(data_cv2_idn, file = 'model_outputs/idn_cv_2.RData')
+data_cv2_col <- cv_spatial_folds(data_col, k = 7)
+autoplot(data_cv2_col, jitter = 0.7)
+ggsave('figs/col_cv_spatial2.png')
+save(data_cv2_col, file = 'model_outputs/col_cv_2.RData')
 
 
-#autoplot(data_cv1_idn[[1]]$train, pr_limits = c(0, 0.3))
+#autoplot(data_cv1_col[[1]]$train, pr_limits = c(0, 0.3))
 
 use_points <- 1
 use_polygons <- 1
@@ -176,7 +182,7 @@ arg_list <- list(prior_rho_min = 3, #
                  use_points = use_points)
 
 if(FALSE){
-  full_model <- fit_model(data_idn, mesh_idn, its = 1000, model.args = arg_list)
+  full_model <- fit_model(data_col, mesh_col, its = 1000, model.args = arg_list)
   autoplot(full_model)
   
   png('figs/full_model_in_sample_map.png')
@@ -184,58 +190,58 @@ if(FALSE){
   dev.off()
   
   in_sample <- cv_performance(predictions = full_model$predictions, 
-                              holdout = data_idn,
+                              holdout = data_col,
                               model_params = full_model$model, 
                               CI = 0.8,
                               use_points = use_points)
   autoplot(in_sample, CI = TRUE)
   autoplot(in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/idn_full_model_in_sample.png')
+  ggsave('figs/col_full_model_in_sample.png')
   
-  save(full_model, file = 'model_outputs/full_model_idn.RData')
+  save(full_model, file = 'model_outputs/full_model_col.RData')
   
   
   
   arg_list[c('use_polygons', 'use_points')] <- c(0, 1)
-  points_model <- fit_model(data_idn, mesh_idn, its = 1000, model.args = arg_list)
+  points_model <- fit_model(data_col, mesh_col, its = 1000, model.args = arg_list)
   autoplot(points_model)
   png('figs/points_model_in_sample_map.png')
   plot(points_model, layer = 'api')
   dev.off()
   
   points_in_sample <- cv_performance(predictions = points_model$predictions, 
-                                     holdout = data_idn,
+                                     holdout = data_col,
                                      model_params = points_model$model, 
                                      CI = 0.8,
                                      use_points = use_points)
   autoplot(points_in_sample, CI = TRUE)
   autoplot(points_in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/idn_points_model_in_sample.png')
+  ggsave('figs/col_points_model_in_sample.png')
   
   
-  save(points_model, file = 'model_outputs/points_model_idn.RData')
+  save(points_model, file = 'model_outputs/points_model_col.RData')
   
   
   
   
   
   arg_list[c('use_polygons', 'use_points')] <- c(1, 0)
-  polygons_model <- fit_model(data_idn, mesh_idn, its = 1000, model.args = arg_list)
+  polygons_model <- fit_model(data_col, mesh_col, its = 1000, model.args = arg_list)
   autoplot(polygons_model)
   png('figs/polygons_model_in_sample_map.png')
   plot(polygons_model, layer = 'api')
   dev.off()
   
   polygons_in_sample <- cv_performance(predictions = polygons_model$predictions, 
-                                       holdout = data_idn,
+                                       holdout = data_col,
                                        model_params = polygons_model$model, 
                                        CI = 0.8,
                                        use_points = FALSE)
   autoplot(polygons_in_sample, CI = TRUE)
   autoplot(polygons_in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/idn_polygon_model_in_sample.png')
+  ggsave('figs/col_polygon_model_in_sample.png')
   
-  save(polygons_model, file = 'model_outputs/polygons_model_idn.RData')
+  save(polygons_model, file = 'model_outputs/polygons_model_col.RData')
   
   
   
@@ -246,43 +252,43 @@ if(FALSE){
 cat('Start cv1 model 1')
 
 arg_list[c('use_polygons', 'use_points')] <- c(0, 1)
-cv1_output1 <- run_cv(data_cv1_idn, mesh_idn, its = 1000, 
+cv1_output1 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv1_idn, cv1_output1, column = FALSE)
-ggsave('figs/idn_points_only_obspred_map.png')
-obspred_map(data_cv1_idn, cv1_output1, trans = 'log10', column = FALSE)
-ggsave('figs/idn_points_only_obspred_map_log.png')
+obspred_map(data_cv1_col, cv1_output1, column = FALSE)
+ggsave('figs/col_points_only_obspred_map.png')
+obspred_map(data_cv1_col, cv1_output1, trans = 'log10', column = FALSE)
+ggsave('figs/col_points_only_obspred_map_log.png')
 autoplot(cv1_output1, type = 'obs_preds', CI = TRUE)
-ggsave('figs/idn_points_only_obspred.png')
+ggsave('figs/col_points_only_obspred.png')
 
 cat('Start cv1 model 2')
 
 arg_list[c('use_polygons', 'use_points')] <- c(1, 0)
-cv1_output2 <- run_cv(data_cv1_idn, mesh_idn, its = 1000, 
+cv1_output2 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv1_idn, cv1_output2, column = FALSE)
-ggsave('figs/idn_polygons_only_obspred_map.png')
-obspred_map(data_cv1_idn, cv1_output2, trans = 'log10', column = FALSE)
-ggsave('figs/idn_polygons_only_obspred_map_log.png')
+obspred_map(data_cv1_col, cv1_output2, column = FALSE)
+ggsave('figs/col_polygons_only_obspred_map.png')
+obspred_map(data_cv1_col, cv1_output2, trans = 'log10', column = FALSE)
+ggsave('figs/col_polygons_only_obspred_map_log.png')
 autoplot(cv1_output2, type = 'obs_preds', CI = TRUE)
-ggsave('figs/idn_polygons_only_obspred.png')
+ggsave('figs/col_polygons_only_obspred.png')
 
 cat('Start cv1 model 3')
 
 arg_list[c('use_polygons', 'use_points')] <- c(1, 1)
-cv1_output3 <- run_cv(data_cv1_idn, mesh_idn, its = 1000, 
+cv1_output3 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv1_idn, cv1_output3, column = FALSE)
-ggsave('figs/idn_joint_obspred_map.png')
-obspred_map(data_cv1_idn, cv1_output3, trans = 'log10', column = FALSE)
-ggsave('figs/idn_joint_obspred_map_log.png')
+obspred_map(data_cv1_col, cv1_output3, column = FALSE)
+ggsave('figs/col_joint_obspred_map.png')
+obspred_map(data_cv1_col, cv1_output3, trans = 'log10', column = FALSE)
+ggsave('figs/col_joint_obspred_map_log.png')
 autoplot(cv1_output3, type = 'obs_preds', CI = TRUE)
-ggsave('figs/idn_joint_obspred.png')
+ggsave('figs/col_joint_obspred.png')
 
 
-save(cv1_output1, file = 'model_outputs/idn_points_cv_1.RData')
-save(cv1_output2, file = 'model_outputs/idn_polygon_cv_1.RData')
-save(cv1_output3, file = 'model_outputs/idn_joint_cv_1.RData')
+save(cv1_output1, file = 'model_outputs/col_points_cv_1.RData')
+save(cv1_output2, file = 'model_outputs/col_polygon_cv_1.RData')
+save(cv1_output3, file = 'model_outputs/col_joint_cv_1.RData')
 
 cv1_output1$summary$polygon_metrics
 cv1_output2$summary$polygon_metrics
@@ -299,43 +305,43 @@ cv1_output3$summary$pr_metrics
 cat('Start cv2 model 1')
 
 arg_list[c('use_polygons', 'use_points')] <- c(0, 1)
-cv2_output1 <- run_cv(data_cv2_idn, mesh_idn, its = 1000, 
+cv2_output1 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv2_idn, cv2_output1, column = FALSE)
-ggsave('figs/idn_points_only_obspred_map2.png')
-obspred_map(data_cv2_idn, cv2_output1, trans = 'log10', column = FALSE)
-ggsave('figs/idn_points_only_obspred_map_log2.png')
+obspred_map(data_cv2_col, cv2_output1, column = FALSE)
+ggsave('figs/col_points_only_obspred_map2.png')
+obspred_map(data_cv2_col, cv2_output1, trans = 'log10', column = FALSE)
+ggsave('figs/col_points_only_obspred_map_log2.png')
 autoplot(cv2_output1, type = 'obs_preds', CI = TRUE)
-ggsave('figs/idn_points_only_obspred2.png')
+ggsave('figs/col_points_only_obspred2.png')
 
 cat('Start cv2 model 2')
 
 arg_list[c('use_polygons', 'use_points')] <- c(1, 0)
-cv2_output2 <- run_cv(data_cv2_idn, mesh_idn, its = 1000, 
+cv2_output2 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv2_idn, cv2_output2, column = FALSE)
-ggsave('figs/idn_polygons_only_obspred_map2.png')
-obspred_map(data_cv2_idn, cv2_output2, trans = 'log10', column = FALSE)
-ggsave('figs/idn_polygons_only_obspred_map_log2.png')
+obspred_map(data_cv2_col, cv2_output2, column = FALSE)
+ggsave('figs/col_polygons_only_obspred_map2.png')
+obspred_map(data_cv2_col, cv2_output2, trans = 'log10', column = FALSE)
+ggsave('figs/col_polygons_only_obspred_map_log2.png')
 autoplot(cv2_output2, type = 'obs_preds', CI = TRUE)
-ggsave('figs/idn_polygons_only_obspred2.png')
+ggsave('figs/col_polygons_only_obspred2.png')
 
 cat('Start cv2 model 3')
 
 arg_list[c('use_polygons', 'use_points')] <- c(1, 1)
-cv2_output3 <- run_cv(data_cv2_idn, mesh_idn, its = 1000, 
+cv2_output3 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv2_idn, cv2_output3, column = FALSE)
-ggsave('figs/idn_joint_obspred_map2.png')
-obspred_map(data_cv2_idn, cv2_output3, trans = 'log10', column = FALSE)
-ggsave('figs/idn_joint_obspred_map_log2.png')
+obspred_map(data_cv2_col, cv2_output3, column = FALSE)
+ggsave('figs/col_joint_obspred_map2.png')
+obspred_map(data_cv2_col, cv2_output3, trans = 'log10', column = FALSE)
+ggsave('figs/col_joint_obspred_map_log2.png')
 autoplot(cv2_output3, type = 'obs_preds', CI = TRUE)
-ggsave('figs/idn_joint_obspred2.png')
+ggsave('figs/col_joint_obspred2.png')
 
 
-save(cv2_output1, file = 'model_outputs/idn_points_cv_2.RData')
-save(cv2_output2, file = 'model_outputs/idn_polygon_cv_2.RData')
-save(cv2_output3, file = 'model_outputs/idn_joint_cv_2.RData')
+save(cv2_output1, file = 'model_outputs/col_points_cv_2.RData')
+save(cv2_output2, file = 'model_outputs/col_polygon_cv_2.RData')
+save(cv2_output3, file = 'model_outputs/col_joint_cv_2.RData')
 
 cv2_output1$summary$polygon_metrics
 cv2_output2$summary$polygon_metrics
