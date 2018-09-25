@@ -63,7 +63,13 @@ run_machine_learn <- function(pr_path,
   coords <- pr_clean[, c(pr_latlon[2], pr_latlon[1])]
   
   pr_extracted <- raster::extract(covs, SpatialPoints(coords))
+  names(pr_extracted) <- names(covs)
+
   
+  # ignoring GP_2013, remove NA rows.
+  missingpoints <- pr_extracted %>% complete.cases
+  pr_extracted <- pr_extracted[missingpoints, ]
+  pr_clean <- pr_clean[missingpoints, ]
 
   #models <- fit_models()
 
@@ -74,18 +80,64 @@ run_machine_learn <- function(pr_path,
   y <- pr_clean$prevalence
   partition <- createMultiFolds(y, k = 5, times = 1)
   
-  fitControl1 <- trainControl(index = partition, 
-                              returnData = TRUE,
-                              savePredictions = TRUE)
-  
-  
-  fitControl_rand <- trainControl(index = partition, 
-                              returnData = TRUE,
-                              savePredictions = TRUE,
-                              search = 'random')
 
 
+  models[[1]] <- train(pr_extracted, y, 
+                       method = 'enet',
+                       trControl = trainControl(index = partition, 
+                                                returnData = TRUE,
+                                                savePredictions = TRUE, 
+                                                search = search_vec[1]),
+                       tuneLength = tuneLength_vec[1])
+                       
+
+
+
+  models[[2]] <- train(pr_extracted, y, 
+                       method = 'xgbTree',
+                       trControl = trainControl(index = partition, 
+                                                returnData = TRUE,
+                                                savePredictions = TRUE, 
+                                                search = search_vec[2]),
+                       tuneLength = tuneLength_vec[2])
+                       
+
+
+
+
+
+  models[[3]] <- train(pr_extracted, y, 
+                       method = 'ranger',
+                       trControl = trainControl(index = partition, 
+                                                returnData = TRUE,
+                                                savePredictions = TRUE, 
+                                                search = search_vec[3]),
+                       tuneLength = tuneLength_vec[3])
+                       
+
+
+  models[[4]] <- train(pr_extracted, y, 
+                       method = 'ppr',
+                       trControl = trainControl(index = partition, 
+                                                returnData = TRUE,
+                                                savePredictions = TRUE, 
+                                                search = search_vec[4]),
+                       tuneLength = tuneLength_vec[4])
+                       
+
   
+  if(!is.null(figpath)){
+    png(paste0(figpath, 'enetopt.png'))
+    print(plot(models[[1]]))
+    dev.off()
+  } 
+  
+
+    print(plotObsVsPred(extractPrediction(list(models[[1]]))))
+    print(plotObsVsPred(extractPrediction(list(models[[2]]))))
+    print(plotObsVsPred(extractPrediction(list(models[[3]]))))
+    print(plotObsVsPred(extractPrediction(list(models[[4]]))))
+
 
   covs_crop <- crop(covs, extent)
 
@@ -93,4 +145,20 @@ run_machine_learn <- function(pr_path,
   return(machine_learn_covariates)
   
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   
