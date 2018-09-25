@@ -39,7 +39,7 @@ load_data <- function(PR_path,
                       shapefile_path, 
                       shapefile_pattern,
                       api_year, 
-                      pr_year,
+                      pr_min_year = 1990,
                       useiso3,
                       standardisePR = c(2, 10),
                       roundPR = FALSE,
@@ -75,8 +75,16 @@ load_data <- function(PR_path,
   # Read PR data
   pr <- readr::read_csv(PR_path, guess_max  = 1e5)
   
-  usecountries <- find_country_from_iso3(useiso3, api_full$iso3, api_full$country_name)
-  pr <- pr %>% filter(country %in% usecountries, year_start %in% pr_year)
+  if(pr_country == 'country'){
+    usecountries <- find_country_from_iso3(useiso3, api_full$iso3, api_full$country_name)
+  } else if(pr_country == 'SouthAmerica'){
+    usecountries <- c("Colombia", "Brazil", "Venezuela", "Peru", "Suriname", "Bolivia")
+
+  } else if(pr_country == 'all'){
+    usecountries <- unique(pr$country)
+    
+  }
+  pr <- pr %>% filter(country %in% usecountries, year_start >= pr_min_year)
   
   pr_clean <- data_frame(
     prevalence = pull(pr, pr_pos_column) / pull(pr, pr_n_column),
