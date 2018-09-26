@@ -105,11 +105,11 @@ covs <- do.call(stack, CombineRasters(covs_cropped))
 
 
 
-covs_sa <- run_machine_learn(extent = c(-85, -60, -10, 20))
+# covs_sa <- run_machine_learn(extent = c(-85, -60, -10, 20))
 
-covs_all <- run_machine_learn(extent = list(c(-85, -60, -10, 20), c(90, 150, -15, 10))
+# covs_all <- run_machine_learn(extent = list(c(-85, -60, -10, 20), c(90, 150, -15, 10))
 
-covs_idn <- run_machine_learn(extent = c(90, 150, -15, 10))
+# covs_idn <- run_machine_learn(extent = c(90, 150, -15, 10))
 
 
 
