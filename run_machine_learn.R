@@ -56,23 +56,8 @@ library(ggplot2)
 library(cowplot)
 theme_set(theme_minimal())
 
-##  Modelling packages
-library(TMB)
-#library(stantmb)
-library(INLA)
-if(Sys.info()["sysname"] != 'Windows'){
-  message('using INLA unix workaround')
-  INLA:::inla.dynload.workaround()
-} else {
-  message('Not using INLA unix workaround. Expect you are using winows.')
-}
-library(INLAutils)
-library(sparseMVN)
+library(caret)
 
-
-# Parallel processing
-library(foreach)
-library(doParallel)
 
 
 # load functions
@@ -105,11 +90,296 @@ covs <- do.call(stack, CombineRasters(covs_cropped))
 
 
 
-# covs_sa <- run_machine_learn(extent = c(-85, -60, -10, 20))
 
-# covs_all <- run_machine_learn(extent = list(c(-85, -60, -10, 20), c(90, 150, -15, 10))
 
-# covs_idn <- run_machine_learn(extent = c(90, 150, -15, 10))
+pr_pos_column = 'positive'
+pr_n_column = 'examined'
+pr_latlon = c('latitude', 'longitude')
+pr_country = 'country'
+pr_age_low = 'lower_age'
+pr_age_high = 'upper_age'
+standardisePR = c(2, 10)
+roundPR = FALSE
+standardisePars = 'Pf_Smith2007'
+pr_min_year = 1990
+
+pr <- readr::read_csv(PR_path, guess_max  = 1e5)
+
+pr_region <- 'all'
+if(pr_region == 'country'){
+  usecountries <- find_country_from_iso3(useiso3, api_full$iso3, api_full$country_name)
+} else if(pr_region == 'SouthAmerica'){
+  usecountries <- c("Colombia", "Brazil", "Venezuela", "Peru", "Suriname", "Bolivia")
+} else if(pr_region == 'all'){
+  usecountries <- unique(pr$country)
+}
+pr <- pr %>% filter(country %in% usecountries, year_start >= pr_min_year)
+
+
+pr_clean <- data_frame(
+  prevalence = pull(pr, pr_pos_column) / pull(pr, pr_n_column),
+  positive = pr %>% pull(pr_pos_column),
+  examined = pr %>% pull(pr_n_column),
+  latitude = pr %>% pull(pr_latlon[1]),
+  longitude =  pr %>% pull(pr_latlon[2])
+)
+pr_clean <- pr_clean %>% mutate(prevalence = positive / examined)
+
+if(!is.null(standardisePR)){
+  prev_stand <- convertPrevalence(pr_clean$prevalence, 
+                                  pr %>% pull(pr_age_low),
+                                  pr %>% pull(pr_age_high),
+                                  standardisePR[1],
+                                  standardisePR[2],
+                                  parameters = standardisePars
+  )
+  if(roundPR == TRUE){
+    pr_clean$positive <- round(pr_clean$examined * prev_stand)
+  } else {
+    pr_clean$positive <- pr_clean$examined * prev_stand
+  }
+}  
+
+
+coords <- pr_clean[, c(pr_latlon[2], pr_latlon[1])]
+
+pr_extracted <- raster::extract(covs, SpatialPoints(coords))
+names(pr_extracted) <- names(covs)
+
+
+# ignoring GP_2013, remove NA rows.
+missingpoints <- pr_extracted %>% complete.cases
+pr_extracted <- pr_extracted[missingpoints, ]
+pr_clean <- pr_clean[missingpoints, ]
+
+#models <- fit_models()
+
+#predictions <- predict_models()
+
+m <- list()
+
+y <- pr_clean$prevalence
+partition <- createMultiFolds(y, k = 5, times = 1)
+
+models <- c('enet', 'xgbTree', 'ranger', 'ppr', 'nnet')
+tuneLength_vec <- c(10, 10, 10, 10, 10)
+search_vec <- c('grid', 'random', 'random', 'grid')
+
+m[[1]] <- train(pr_extracted, y, 
+                     method = models[1],
+                     trControl = trainControl(index = partition, 
+                                              returnData = TRUE,
+                                              savePredictions = TRUE, 
+                                              search = search_vec[1],
+                                              predictionBounds = c(0, 1)),
+                     tuneLength = tuneLength_vec[1],
+                     weights = pr_clean$examined)
+                     
+
+
+
+m[[2]] <- train(pr_extracted, y, 
+                     method = models[2],
+                     trControl = trainControl(index = partition, 
+                                              returnData = TRUE,
+                                              savePredictions = TRUE, 
+                                              search = search_vec[2]),
+                                              predictionBounds = c(0, 1)),
+                     tuneLength = tuneLength_vec[2])
+                     
+
+
+
+
+
+m[[3]] <- train(pr_extracted, y, 
+                     method = models[3],
+                     trControl = trainControl(index = partition, 
+                                              returnData = TRUE,
+                                              savePredictions = TRUE, 
+                                              search = search_vec[3]),
+                                              predictionBounds = c(0, 1)),
+                     tuneLength = tuneLength_vec[3])
+                     
+
+
+m[[4]] <- train(pr_extracted, y, 
+                     method = 'ppr',
+                     trControl = trainControl(index = partition, 
+                                              returnData = TRUE,
+                                              savePredictions = TRUE, 
+                                              search = search_vec[4]),
+                                              predictionBounds = c(0, 1)),
+                     tuneLength = tuneLength_vec[4])
+                     
+
+
+
+png('figs/enetopt.png')
+print(plot(m[[1]]))
+dev.off()
+
+png('figs/ppropt.png')
+print(plot(m[[4]]))
+dev.off()
+
+
+plotCV <- function(t, print = TRUE){
+  stopifnot(class(t) == 'train')
+  
+  row_matches <- sapply(1:length(t$bestTune), function(x) t$pred[, names(t$bestTune)[x]] == t$bestTune[[x]])
+  best_rows <- rowMeans(row_matches) == 1
+
+  d <- t$pred[best_rows, ]
+
+  if('weights' %in% names(d)){
+    p <- ggplot(d, aes(obs, pred, size = weights))
+  } else { 
+    p <- ggplot(d, aes(obs, pred))
+  }
+
+  p <- p + 
+        geom_point(alpha = 0.3) + 
+        geom_smooth() +
+        geom_abline(slope = 1, intercept = 0)
+  
+  if(print) print(p)
+
+  return(invisible(p))
+
+} 
+
+
+
+compare_models <- function(t1, t2, print = TRUE){
+  stopifnot(class(t1) == 'train')
+  stopifnot(class(t2) == 'train')
+
+  row_matches <- sapply(1:length(t1$bestTune), function(x) t1$pred[, names(t1$bestTune)[x]] == t1$bestTune[[x]])
+  best_rows <- rowMeans(row_matches) == 1
+
+  d1 <- t1$pred[best_rows, ]
+
+  row_matches <- sapply(1:length(t2$bestTune), function(x) t2$pred[, names(t2$bestTune)[x]] == t2$bestTune[[x]])
+  best_rows <- rowMeans(row_matches) == 1
+
+  d2 <- t2$pred[best_rows, ]
+
+  d <- left_join(d1, d2, by = 'rowIndex')
+
+  if('weights' %in% names(d1)){
+    p <- ggplot(d, aes(pred.x, pred.y, size = weights))
+  } else { 
+    p <- ggplot(d, aes(pred.x, pred.y))
+  }
+
+  corre <- round(cor(d$pred.x, d$pred.y), 2)
+  r1 <- round(min(t1$results[, t1$metric]), 2)
+  r2 <- round(min(t2$results[, t2$metric]), 2)
+  p <- p + 
+        geom_point(alpha = 0.3) + 
+        geom_abline(slope = 1, intercept = 0) +
+        labs(x = t1$method, y = t2$method) +
+        ggtitle(paste0('Correlation: ', corre, '. t1 ', t1$metric, ': ', r1, '. t2 ', t1$metric, ': ', r2))
+  
+  if(print) print(p)
+
+  return(invisible(p))
+
+} 
+
+
+p <- plotCV(m[[1]])
+p + xlim(0, NA)
+ggsave('figs/enet_obspred.png')
+
+
+p <- plotCV(m[[2]])
+p + xlim(0, NA)
+ggsave('figs/xgboost_obspred.png')
+
+p <- plotCV(m[[3]])
+p + xlim(0, NA)
+ggsave('figs/ranger_obspred.png')
+
+p <- plotCV(m[[4]])
+p + xlim(0, NA)
+ggsave('figs/ppr_obspred.png')
+
+
+compare_models(m[[1]], m[[2]])
+ggsave('figs/comp_enet_xgb.png')
+
+compare_models(m[[3]], m[[2]])
+ggsave('figs/comp_ranger_xgb.png')
+
+compare_models(m[[4]], m[[2]])
+ggsave('figs/comp_ppr_xgb.png')
+
+save(m, file = 'model_outputs/global_ml_models.RData')
+
+
+extent_col <- c(-85, -60, -10, 20)
+covs_crop_col <- crop(covs, extent_col)
+covs_col_mat <- getValues(covs_crop_col)
+
+pred <- matrix(NA, nrow = nrow(covs_col_mat), ncol = length(m))
+ 
+nas <- complete.cases(covs_col_mat)
+
+
+pred[nas, ] <- predict(m, newdata = covs_col_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+
+r.pts <- rasterToPoints(covs_crop_col, spatial = TRUE)
+
+
+pred_rast_col <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_col[pred_rast_col < 0] <- 0
+pred_rast_col_inc <- calc(pred_rast_col, PrevIncConversion)
+names(pred_rast_col_inc) <- sapply(m, function(x) x$method)
+
+
+writeRaster(pred_rast_col_inc, 
+            paste0('model_outputs/ml_pred_rasters/col', sapply(m, function(x) x$method), '.tif'),
+            bylayer = TRUE,
+            format="GTiff", overwrite = TRUE, 
+            options = c('COMPRESS' = 'LZW'))
+            
+
+
+
+
+
+
+extent_idn <- c(90, 150, -15, 10)
+covs_crop_idn <- crop(covs, extent_idn)
+covs_idn_mat <- getValues(covs_crop_idn)
+
+pred <- matrix(NA, nrow = nrow(covs_idn_mat), ncol = length(m))
+ 
+nas <- complete.cases(covs_idn_mat)
+
+
+pred[nas, ] <- predict(m, newdata = covs_idn_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+
+r.pts <- rasterToPoints(covs_crop_idn, spatial = TRUE)
+
+
+pred_rast_idn <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_idn[pred_rast_idn < 0] <- 0
+pred_rast_idn_inc <- calc(pred_rast_idn, PrevIncConversion)
+names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
+
+
+writeRaster(pred_rast_idn_inc, 
+            paste0('model_outputs/ml_pred_rasters/idn', sapply(m, function(x) x$method), '.tif'),
+            bylayer = TRUE,
+            format="GTiff", overwrite = TRUE, 
+            options = c('COMPRESS' = 'LZW'))
+            
+
+
+
 
 
 
