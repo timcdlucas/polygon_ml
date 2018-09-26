@@ -14,3 +14,9 @@ title: A comparison of malaria predictions using polygon models vs polygons mode
 
 The scripts `run_analysis_idn.R` and `run_analysis_col.R` are the main scripts that runs the full analysis.
 
+
+# First run
+
+Indonesia and Colombia
+
+Environmental covariates vs global PR ML vs global PR ML + environmental.
