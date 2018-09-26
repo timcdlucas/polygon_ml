@@ -82,7 +82,6 @@ load_data <- function(PR_path,
 
   } else if(pr_country == 'all'){
     usecountries <- unique(pr$country)
-    
   }
   pr <- pr %>% filter(country %in% usecountries, year_start >= pr_min_year)
   
