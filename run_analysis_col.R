@@ -1,7 +1,7 @@
 ########
-# master script for point Vs polygon Vs joint analysis
+# master script for ml on points vs polygon only analysis
 # Tim Lucas
-# 2018-05-30
+# 2018-08-20
 ###########
 
 if(Sys.info()["user"] != 'anita'){
@@ -201,11 +201,11 @@ save(mesh_col, file = 'model_outputs/col_mesh.RData')
 
 
 # Define cross validation strategies
-data_cv1_col <- cv_random_folds(data_col_cov, k = 10)
-data_cv1_col_ml <- cv_random_folds(data_col_ml, k = 10, 
+data_cv1_col <- cv_random_folds(data_col_cov, k = 6)
+data_cv1_col_ml <- cv_random_folds(data_col_ml, k = 6, 
                                    polygon_folds = attr(data_cv1_col, 'polygon_folds'),
                                    pr_folds = attr(data_cv1_col, 'pr_folds'))
-data_cv1_col_all <- cv_random_folds(data_col_all, k = 10, 
+data_cv1_col_all <- cv_random_folds(data_col_all, k = 6, 
                                    polygon_folds = attr(data_cv1_col, 'polygon_folds'),
                                    pr_folds = attr(data_cv1_col, 'pr_folds'))
 
@@ -366,43 +366,49 @@ if(FALSE){
 
 
 # Run 3 x models on cv1.
-cat('Start cv1 model 1')
+cat('Start cv1 model 1\n')
 
 cv1_output1 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv1_col, cv1_output1, column = FALSE)
-ggsave('figs/col_points_only_obspred_map.png')
-obspred_map(data_cv1_col, cv1_output1, trans = 'log10', column = FALSE)
-ggsave('figs/col_points_only_obspred_map_log.png')
-autoplot(cv1_output1, type = 'obs_preds', CI = TRUE)
-ggsave('figs/col_points_only_obspred.png')
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+obspred_map(data_cv1_col, cv1_output1, column = FALSE, mask = TRUE)
+ggsave('figs/col_covs_only_obspred_map.png')
+obspred_map(data_cv1_col, cv1_output1, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/col_covs_oonly_obspred_map_log.png')
+autoplot(cv1_output1, type = 'obs_preds', CI = FALSE)
+ggsave('figs/col_covs_oonly_obspred.png')
+autoplot(cv1_output1, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_covs_only_obspred_log.png')
 
-cat('Start cv1 model 2')
+cat('Start cv1 model 2\n')
 
-cv1_output2 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv1_col, cv1_output2, column = FALSE)
-ggsave('figs/col_polygons_only_obspred_map.png')
-obspred_map(data_cv1_col, cv1_output2, trans = 'log10', column = FALSE)
-ggsave('figs/col_polygons_only_obspred_map_log.png')
-autoplot(cv1_output2, type = 'obs_preds', CI = TRUE)
-ggsave('figs/col_polygons_only_obspred.png')
+cv1_output2 <- run_cv(data_cv1_col_ml, mesh_col, its = 1000, 
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+obspred_map(data_cv1_col, cv1_output2, column = FALSE, mask = TRUE)
+ggsave('figs/col_ml_only_obspred_map.png')
+obspred_map(data_cv1_col, cv1_output2, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/col_ml_only_obspred_map_log.png')
+autoplot(cv1_output2, type = 'obs_preds', CI = FALSE)
+ggsave('figs/col_ml_only_obspred.png')
+autoplot(cv1_output2, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_ml_only_obspred_log.png')
 
-cat('Start cv1 model 3')
+cat('Start cv1 model 3\n')
 
-cv1_output3 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv1_col, cv1_output3, column = FALSE)
-ggsave('figs/col_joint_obspred_map.png')
-obspred_map(data_cv1_col, cv1_output3, trans = 'log10', column = FALSE)
-ggsave('figs/col_joint_obspred_map_log.png')
-autoplot(cv1_output3, type = 'obs_preds', CI = TRUE)
-ggsave('figs/col_joint_obspred.png')
+cv1_output3 <- run_cv(data_cv1_col_all, mesh_col, its = 1000, 
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+obspred_map(data_cv1_col, cv1_output3, column = FALSE, mask = TRUE)
+ggsave('figs/col_all_obspred_map.png')
+obspred_map(data_cv1_col, cv1_output3, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/col_all_obspred_map_log.png')
+autoplot(cv1_output3, type = 'obs_preds', CI = FALSE)
+ggsave('figs/col_all_obspred.png')
+autoplot(cv1_output3, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_all_obspred_log.png')
 
 
-save(cv1_output1, file = 'model_outputs/col_points_cv_1.RData')
-save(cv1_output2, file = 'model_outputs/col_polygon_cv_1.RData')
-save(cv1_output3, file = 'model_outputs/col_joint_cv_1.RData')
+save(cv1_output1, file = 'model_outputs/col_covs_cv_1.RData')
+save(cv1_output2, file = 'model_outputs/col_ml_cv_1.RData')
+save(cv1_output3, file = 'model_outputs/col_all_cv_1.RData')
 
 cv1_output1$summary$polygon_metrics
 cv1_output2$summary$polygon_metrics
@@ -421,33 +427,42 @@ cat('Start cv2 model 1')
 cv2_output1 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 3)
 obspred_map(data_cv2_col, cv2_output1, column = FALSE, mask = TRUE)
-ggsave('figs/col_points_only_obspred_map2.png')
+ggsave('figs/col_covs_only_obspred_map2.png')
 obspred_map(data_cv2_col, cv2_output1, trans = 'log10', column = FALSE, mask = TRUE)
-ggsave('figs/col_points_only_obspred_map_log2.png')
+ggsave('figs/col_covs_only_obspred_map_log2.png')
 autoplot(cv2_output1, type = 'obs_preds', CI = FALSE)
-ggsave('figs/col_points_only_obspred2.png')
+ggsave('figs/col_covs_only_obspred2.png')
+autoplot(cv2_output1, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_covs_only_obspred_log2.png')
+
 
 cat('Start cv2 model 2')
 
-cv2_output2 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv2_col, cv2_output2, column = FALSE)
-ggsave('figs/col_polygons_only_obspred_map2.png')
-obspred_map(data_cv2_col, cv2_output2, trans = 'log10', column = FALSE)
-ggsave('figs/col_polygons_only_obspred_map_log2.png')
-autoplot(cv2_output2, type = 'obs_preds', CI = TRUE)
-ggsave('figs/col_polygons_only_obspred2.png')
+cv2_output2 <- run_cv(data_cv2_col_ml, mesh_col, its = 1000, 
+                      model.args = arg_list, CI = 0.8, parallel_delay = 30, cores = 3)
+obspred_map(data_cv2_col, cv2_output2, column = FALSE, mask = TRUE)
+ggsave('figs/col_ml_only_obspred_map2.png')
+obspred_map(data_cv2_col, cv2_output2, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/col_ml_only_obspred_map_log2.png')
+autoplot(cv2_output2, type = 'obs_preds', CI = FALSE)
+ggsave('figs/col_ml_only_obspred2.png')
+autoplot(cv2_output2, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_ml_only_obspred_log2.png')
+
 
 cat('Start cv2 model 3')
 
-cv2_output3 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv2_col, cv2_output3, column = FALSE)
-ggsave('figs/col_joint_obspred_map2.png')
-obspred_map(data_cv2_col, cv2_output3, trans = 'log10', column = FALSE)
-ggsave('figs/col_joint_obspred_map_log2.png')
-autoplot(cv2_output3, type = 'obs_preds', CI = TRUE)
-ggsave('figs/col_joint_obspred2.png')
+cv2_output3 <- run_cv(data_cv2_col_all, mesh_col, its = 1000, 
+                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 3)
+obspred_map(data_cv2_col, cv2_output3, column = FALSE, mask = TRUE)
+ggsave('figs/col_all_obspred_map2.png')
+obspred_map(data_cv2_col, cv2_output3, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/col_all_obspred_map_log2.png')
+autoplot(cv2_output3, type = 'obs_preds', CI = FALSE)
+ggsave('figs/col_all_obspred2.png')
+autoplot(cv2_output3, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_all_only_obspred_log2.png')
+
 
 
 save(cv2_output1, file = 'model_outputs/col_covs_cv_2.RData')
