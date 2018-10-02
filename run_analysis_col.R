@@ -32,6 +32,14 @@ cov_raster_paths <- c(
   Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCW/5km/Synoptic/TCW.Synoptic.Overall.mean.5km.mean.tif')
 )
 
+ml_local_raster_paths <- c(
+  'model_outputs/ml_pred_rasters/sa_col_enet.tif',
+  #'model_outputs/ml_pred_rasters/sa_col_ppr.tif',
+  'model_outputs/ml_pred_rasters/sa_col_ranger.tif'
+  #'model_outputs/ml_pred_rasters/sa_col_xgbTree.tif'
+)
+
+
 # load packages
 
 ## Spatial packages
@@ -103,51 +111,35 @@ data <- load_data(PR_path,
                   shapefile_pattern = '.shp$', 
                   useiso3 = 'COL', 
                   admin_unit_level = 'ADMIN2',
-                  pr_country = 'all',
+                  pr_country = 'country',
                   api_year = 2015)
 
-data_sa_cov <- load_data(PR_path, 
+data_ml_cov <- load_data(PR_path, 
                   API_path, 
                   pop_path, 
-                  cov_raster_paths, 
+                  ml_local_raster_paths, 
                   shapefile_path, 
                   shapefile_pattern = '.shp$', 
                   useiso3 = 'COL', 
                   admin_unit_level = 'ADMIN2',
-                  pr_country = 'SouthAmerica',
+                  pr_country = 'country',
                   api_year = 2015)
 
 data_all_cov <- load_data(PR_path, 
                   API_path, 
                   pop_path, 
-                  cov_raster_paths, 
+                  c(cov_raster_paths, ml_local_raster_paths), 
                   shapefile_path, 
                   shapefile_pattern = '.shp$', 
                   useiso3 = 'COL', 
                   admin_unit_level = 'ADMIN2',
-                  pr_country = 'all',
+                  pr_country = 'country',
                   api_year = 2015)
 
 
 # pre analysis
 
 data_col_cov <- process_data(
-  binomial_positive = data_sa_cov$pr$positive,
-  binomial_n = data_sa_cov$pr$examined,
-  coords = data_sa_cov$pr[, c('longitude', 'latitude')],
-  polygon_response = data_sa_cov$api$api_mean,
-  polygon_population = data_sa_cov$api$population,
-  shapefile_id = data_sa_cov$api$shapefile_id,
-  shps_id_column = 'area_id',
-  shapefiles = data_sa_cov$shapefiles,
-  pop_raster = data_sa_cov$pop,
-  cov_rasters = data_sa_cov$covs,
-  useiso3 = 'COL',
-  transform = c(4:7))
-
-save(data_col, file = 'model_outputs/col_full_data.RData')
-
-data_col_sa <- process_data(
   binomial_positive = data$pr$positive,
   binomial_n = data$pr$examined,
   coords = data$pr[, c('longitude', 'latitude')],
@@ -157,31 +149,50 @@ data_col_sa <- process_data(
   shps_id_column = 'area_id',
   shapefiles = data$shapefiles,
   pop_raster = data$pop,
-  cov_rasters = data_sa_cov$covs,
+  cov_rasters = data$covs,
   useiso3 = 'COL',
   transform = c(4:7))
-save(data_col, file = 'model_outputs/col_sa_data.RData')
+
+save(data_col_cov, file = 'model_outputs/col_cov_data.RData')
+
+data_col_ml <- process_data(
+  binomial_positive = data_ml_cov$pr$positive,
+  binomial_n = data_ml_cov$pr$examined,
+  coords = data_ml_cov$pr[, c('longitude', 'latitude')],
+  polygon_response = data_ml_cov$api$api_mean,
+  polygon_population = data_ml_cov$api$population,
+  shapefile_id = data_ml_cov$api$shapefile_id,
+  shps_id_column = 'area_id',
+  shapefiles = data_ml_cov$shapefiles,
+  pop_raster = data_ml_cov$pop,
+  cov_rasters = data_ml_cov$covs,
+  useiso3 = 'COL',
+  transform = NULL)
+save(data_col_ml, file = 'model_outputs/col_ml_data.RData')
 
 data_col_all <- process_data(
-  binomial_positive = data$pr$positive,
-  binomial_n = data$pr$examined,
-  coords = data$pr[, c('longitude', 'latitude')],
-  polygon_response = data$api$api_mean,
-  polygon_population = data$api$population,
-  shapefile_id = data$api$shapefile_id,
+  binomial_positive = data_all_cov$pr$positive,
+  binomial_n = data_all_cov$pr$examined,
+  coords = data_all_cov$pr[, c('longitude', 'latitude')],
+  polygon_response = data_all_cov$api$api_mean,
+  polygon_population = data_all_cov$api$population,
+  shapefile_id = data_all_cov$api$shapefile_id,
   shps_id_column = 'area_id',
-  shapefiles = data$shapefiles,
-  pop_raster = data$pop,
+  shapefiles = data_all_cov$shapefiles,
+  pop_raster = data_all_cov$pop,
   cov_rasters = data_all_cov$covs,
   useiso3 = 'COL',
   transform = c(4:7))
-save(data_col, file = 'model_outputs/col_all_data.RData')
+
+save(data_col_all, file = 'model_outputs/col_all_data.RData')
 
 
 autoplot(data_col_cov, pr_limits = c(0, 0.3))
 autoplot(data_col_cov, pr_limits = c(0, 0.3), trans = 'log1p')
 
 ggsave('figs/col_input_data.png')
+
+
 
 mesh_col <- build_mesh(data_col_cov, mesh.args = list(max.edge = c(0.7, 5), cut = 0.7))
 autoplot(mesh_col)
@@ -190,15 +201,34 @@ save(mesh_col, file = 'model_outputs/col_mesh.RData')
 
 
 # Define cross validation strategies
-data_cv1_col <- cv_random_folds(data_col, k = 10)
-autoplot(data_cv1_col, jitter = 0.7)
+data_cv1_col <- cv_random_folds(data_col_cov, k = 10)
+data_cv1_col_ml <- cv_random_folds(data_col_ml, k = 10, 
+                                   polygon_folds = attr(data_cv1_col, 'polygon_folds'),
+                                   pr_folds = attr(data_cv1_col, 'pr_folds'))
+data_cv1_col_all <- cv_random_folds(data_col_all, k = 10, 
+                                   polygon_folds = attr(data_cv1_col, 'polygon_folds'),
+                                   pr_folds = attr(data_cv1_col, 'pr_folds'))
+
+
+autoplot(data_cv1_col, jitter = 0)
+autoplot(data_cv1_col_ml, jitter = 0)
+
 ggsave('figs/col_cv_random.png')
 save(data_cv1_col, file = 'model_outputs/col_cv_1.RData')
 
 
 # Spatial
-data_cv2_col <- cv_spatial_folds(data_col, k = 2)
-autoplot(data_cv2_col, jitter = 0.7)
+data_cv2_col <- cv_spatial_folds(data_col_cov, k = 3)
+data_cv2_col_ml <- cv_spatial_folds(data_col_ml, k = 3, 
+                                    polygon_folds = attr(data_cv2_col, 'polygon_folds'),
+                                    pr_folds = attr(data_cv2_col, 'pr_folds'))
+data_cv2_col_all <- cv_spatial_folds(data_col_all, k = 3, 
+                                     polygon_folds = attr(data_cv2_col, 'polygon_folds'),
+                                     pr_folds = attr(data_cv2_col, 'pr_folds'))
+
+autoplot(data_cv2_col, jitter = 0)
+autoplot(data_cv2_col_ml, jitter = 0)
+
 ggsave('figs/col_cv_spatial2.png')
 save(data_cv2_col, file = 'model_outputs/col_cv_2.RData')
 
@@ -232,9 +262,23 @@ if(FALSE){
   full_model <- fit_model(data_col_cov, mesh_col, its = 1000, model.args = arg_list)
   autoplot(full_model)
   
-  png('figs/full_model_in_sample_map.png')
+  png('figs/full_model_covs_in_sample_map.png')
   plot(full_model, layer = 'api')
   dev.off()
+
+  png('figs/full_model_covs_covariates_in_sample_map.png')
+  plot(full_model, layer = 'covariates')
+  dev.off()
+
+  png('figs/full_model_covs_field_in_sample_map.png')
+  plot(full_model, layer = 'field')
+  dev.off()
+  
+  png('figs/full_model_covs_in_sample_map_log.png')
+  full_model$predictions$api %>% log10 %>% plot
+  dev.off()
+  
+  
   
   in_sample <- cv_performance(predictions = full_model$predictions, 
                               holdout = data_col_cov,
@@ -243,9 +287,79 @@ if(FALSE){
                               use_points = use_points)
   autoplot(in_sample, CI = TRUE)
   autoplot(in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/col_full_model_in_sample.png')
+  ggsave('figs/col_full_model_covs_in_sample.png')
   
-  save(full_model, file = 'model_outputs/full_model_col.RData')
+  save(full_model, file = 'model_outputs/full_model_covs_col.RData')
+  
+  
+  
+  
+  full_model_ml <- fit_model(data_ml_cov, mesh_col, its = 1000, model.args = arg_list)
+  autoplot(full_model_ml)
+  
+  png('figs/full_model_ml_in_sample_map.png')
+  plot(full_model_ml, layer = 'api')
+  dev.off()
+  
+  png('figs/full_model_ml_covariates_in_sample_map.png')
+  plot(full_model_ml, layer = 'covariates')
+  dev.off()
+  
+  png('figs/full_model_ml_field_in_sample_map.png')
+  plot(full_model_ml, layer = 'field')
+  dev.off()
+  
+  png('figs/full_model_ml_in_sample_map_log.png')
+  full_model_ml$predictions$api %>% log10 %>% plot
+  dev.off()
+  
+  
+  
+  in_sample_ml <- cv_performance(predictions = full_model_ml$predictions, 
+                              holdout = data_ml_cov,
+                              model_params = full_model_ml$model, 
+                              CI = 0.8,
+                              use_points = use_points)
+  autoplot(in_sample_ml, CI = TRUE)
+  autoplot(in_sample_ml, trans = 'log1p', CI = TRUE)
+  ggsave('figs/col_full_model_ml_in_sample.png')
+  
+  save(full_model_ml, file = 'model_outputs/full_model_ml_col.RData')
+  
+  
+  
+  
+  
+  full_model_all <- fit_model(data_col_all, mesh_col, its = 1000, model.args = arg_list)
+  autoplot(full_model_all)
+  
+  png('figs/full_model_all_in_sample_map.png')
+  plot(full_model_all, layer = 'api')
+  dev.off()
+  
+  png('figs/full_model_all_in_sample_map_log.png')
+  full_model_all$predictions$api %>% log10 %>% plot
+  dev.off()
+  
+  
+  png('figs/full_model_all_covariates_in_sample_map.png')
+  plot(full_model_all, layer = 'covariates')
+  dev.off()
+  
+  png('figs/full_mode_alll_field_in_sample_map.png')
+  plot(full_model_all, layer = 'field')
+  dev.off()
+  
+  in_sample_all <- cv_performance(predictions = full_model_all$predictions, 
+                                  holdout = data_col_all,
+                                  model_params = full_model_all$model, 
+                                  CI = 0.8,
+                                  use_points = use_points)
+  autoplot(in_sample_all, CI = TRUE)
+  autoplot(in_sample_all, trans = 'log1p', CI = TRUE)
+  ggsave('figs/col_full_model_all_in_sample.png')
+  
+  save(in_sample_all, file = 'model_outputs/full_model_all_col_all.RData')
   
   
 }
@@ -305,12 +419,12 @@ cv1_output3$summary$pr_metrics
 cat('Start cv2 model 1')
 
 cv2_output1 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 1)
-obspred_map(data_cv2_col, cv2_output1, column = FALSE)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 3)
+obspred_map(data_cv2_col, cv2_output1, column = FALSE, mask = TRUE)
 ggsave('figs/col_points_only_obspred_map2.png')
-obspred_map(data_cv2_col, cv2_output1, trans = 'log10', column = FALSE)
+obspred_map(data_cv2_col, cv2_output1, trans = 'log10', column = FALSE, mask = TRUE)
 ggsave('figs/col_points_only_obspred_map_log2.png')
-autoplot(cv2_output1, type = 'obs_preds', CI = TRUE)
+autoplot(cv2_output1, type = 'obs_preds', CI = FALSE)
 ggsave('figs/col_points_only_obspred2.png')
 
 cat('Start cv2 model 2')
@@ -336,9 +450,9 @@ autoplot(cv2_output3, type = 'obs_preds', CI = TRUE)
 ggsave('figs/col_joint_obspred2.png')
 
 
-save(cv2_output1, file = 'model_outputs/col_points_cv_2.RData')
-save(cv2_output2, file = 'model_outputs/col_polygon_cv_2.RData')
-save(cv2_output3, file = 'model_outputs/col_joint_cv_2.RData')
+save(cv2_output1, file = 'model_outputs/col_covs_cv_2.RData')
+save(cv2_output2, file = 'model_outputs/col_ml_cv_2.RData')
+save(cv2_output3, file = 'model_outputs/col_all_cv_2.RData')
 
 cv2_output1$summary$polygon_metrics
 cv2_output2$summary$polygon_metrics

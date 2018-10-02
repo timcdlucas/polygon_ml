@@ -3,38 +3,47 @@
 #'@return a 'ppj_cv' object. Which is a list of paired train/test 'ppf_data' objects
 #'
 
-cv_spatial_folds <- function(data, k = 5){
+cv_spatial_folds <- function(data, k = 5, polygon_folds = NULL, pr_folds = NULL){
   
-  # Polygons to points
-  # Sort shapefiles to match order of polygon dataframe
-  
-  sorted_shapes <- data$shapefiles[match(data$polygon$shapefile_id, data$shapefiles$area_id), ]
-  
-  centroids <- sapply(seq_len(nrow(sorted_shapes)), 
-                      function(x) rgeos::gCentroid(sorted_shapes[x, ])@coords)
-  
-  centroids <- t(centroids)
-  colnames(centroids) <- c('longitude', 'latitude')
-  
-  all_coords <- rbind(cbind(centroids, id = 1), 
-                      cbind(data$pr[, c('longitude', 'latitude')], id = 0))
-  
-  # Do k means
-  folds <- kmeans(all_coords[, 1:2], k, algorithm = 'MacQueen', iter.max = 1000)
-  folds <- folds$cluster
-  
-  
-  # fold is length nrow(polygons), foldspr is length nrow(points)
-  #   Should be values 1 to k.
-  polygon_folds <- folds[seq_len(nrow(data$polygon))]
-  foldspr <- folds[(nrow(data$polygon) + 1):length(folds)]
-  
+  if(!(is.null(polygon_folds) == is.null(pr_folds))) stop('Set either both or neither polygon_folds and pr_folds')
+  if(is.null(polygon_folds) & is.null(pr_folds)){
+    # Polygons to points
+    # Sort shapefiles to match order of polygon dataframe
+    
+    sorted_shapes <- data$shapefiles[match(data$polygon$shapefile_id, data$shapefiles$area_id), ]
+    
+    centroids <- sapply(seq_len(nrow(sorted_shapes)), 
+                        function(x) rgeos::gCentroid(sorted_shapes[x, ])@coords)
+    
+    centroids <- t(centroids)
+    colnames(centroids) <- c('longitude', 'latitude')
+    
+    all_coords <- rbind(cbind(centroids, id = 1), 
+                        cbind(data$pr[, c('longitude', 'latitude')], id = 0))
+    
+    # Do k means
+    folds <- kmeans(all_coords[, 1:2], k, algorithm = 'MacQueen', iter.max = 1000)
+    folds <- folds$cluster
+    
+    
+    # fold is length nrow(polygons), foldspr is length nrow(points)
+    #   Should be values 1 to k.
+    polygon_folds <- folds[seq_len(nrow(data$polygon))]
+    foldspr <- folds[(nrow(data$polygon) + 1):length(folds)]
+  } else {
+    polygon_folds <- polygon_folds
+    foldspr <- pr_folds
+  }
   data_cv <- list()
   class(data_cv) <- c('ppj_cv', 'list')
   
   for(i in 1:k){
     data_cv[[i]] <- subset_data_cv(data, polygon_folds, foldspr, i)
   }
+  
+  attr(data_cv, 'polygon_folds') <- folds
+  attr(data_cv, 'pr_folds') <- foldspr
+  
   
   return(data_cv)
   

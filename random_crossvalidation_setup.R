@@ -1,20 +1,28 @@
 
 
-#'@return a 'ppj_cv' object. Which is a list of paired train/test 'ppf_data' objects
+#'@return a 'ppj_cv' object. Which is a list of paired train/test 'ppj_data' objects
 #'
 
-cv_random_folds <- function(data, k = 5){
+cv_random_folds <- function(data, k = 5, polygon_folds = NULL, pr_folds = NULL){
   
-  # To make sure theres's nearly exactly n / k in each fold
-  f <- rep(1:k, ceiling(nrow(data$polygon) / k))
-  s <- sample(1:nrow(data$polygon))
-  folds <- f[s]
   
-
-  # Same for PR
-  fpr <- rep(1:k, ceiling(nrow(data$pr) / k))
-  spr <- sample(1:nrow(data$pr))
-  foldspr <- fpr[spr]
+  if(is.null(polygon_folds)){
+    # To make sure theres's nearly exactly n / k in each fold
+    f <- rep(1:k, ceiling(nrow(data$polygon) / k))
+    s <- sample(1:nrow(data$polygon))
+    folds <- f[s]
+  } else {
+    folds <- polygon_folds
+  }
+  
+  if(is.null(pr_folds)){
+    # Same for PR
+    fpr <- rep(1:k, ceiling(nrow(data$pr) / k))
+    spr <- sample(1:nrow(data$pr))
+    foldspr <- fpr[spr]
+  } else {
+    foldspr <- pr_folds
+  }
   
   data_cv <- list()
   class(data_cv) <- c('ppj_cv', 'list')
@@ -31,6 +39,9 @@ cv_random_folds <- function(data, k = 5){
 
   if(any_empty) stop('Some test sets have zero polygons')
   if(any_empty_pr) stop('Some test sets have zero pr points')
+  
+  attr(data_cv, 'polygon_folds') <- folds
+  attr(data_cv, 'pr_folds') <- foldspr
   
   return(data_cv)
   
