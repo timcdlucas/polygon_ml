@@ -41,7 +41,7 @@ cv_spatial_folds <- function(data, k = 5, polygon_folds = NULL, pr_folds = NULL)
     data_cv[[i]] <- subset_data_cv(data, polygon_folds, foldspr, i)
   }
   
-  attr(data_cv, 'polygon_folds') <- folds
+  attr(data_cv, 'polygon_folds') <- polygon_folds
   attr(data_cv, 'pr_folds') <- foldspr
   
   
