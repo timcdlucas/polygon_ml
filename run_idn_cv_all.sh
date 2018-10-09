@@ -1,7 +1,7 @@
 #!/bin/bash
 
 declare -a cv_type=("random" "spatial")
-declare -a model_type=("covs" "ml" "all")
+declare -a data_type=("covs" "ml" "all")
 
 for i in "${cv_type[@]}" 
 do
