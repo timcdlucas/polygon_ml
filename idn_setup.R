@@ -1,13 +1,13 @@
 ########
-# master script for point Vs polygon Vs joint analysis
+# master script for ml on points vs polygon only analysis
 # Tim Lucas
-# 2018-05-30
+# 2018-08-20
 ###########
 
 if(Sys.info()["user"] != 'anita'){
-  setwd('~/timz/timothy/point_polygon_joint_comparison')
+  setwd('~/timz/timothy/polygon_ml_wsc')
 } else {
-  setwd('~/Z/users/anita/point_polygon_join_comparison_analysis')
+  #setwd('~/Z/users/anita/point_polygon_join_comparison_analysis')
 }
 
 source("setUserInfo.R")
@@ -31,6 +31,14 @@ cov_raster_paths <- c(
   #Z('mastergrids/Other_Global_Covariates/UrbanAreas/Global_Urban_Footprint/From_86m/5km/Global_Urban_Footprint_5km_PropUrban.tif'),
   Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCW/5km/Synoptic/TCW.Synoptic.Overall.mean.5km.mean.tif')
 )
+
+ml_local_raster_paths <- c(
+  'model_outputs/ml_pred_rasters/south_asia_idn_enet.tif',
+  'model_outputs/ml_pred_rasters/south_asia_idn_ppr.tif',
+  'model_outputs/ml_pred_rasters/south_asia_idn_xgbTree.tif',
+  'model_outputs/ml_pred_rasters/south_asia_idn_ranger.tif'
+)
+
 
 # load packages
 
@@ -56,6 +64,7 @@ library(ggplot2)
 library(cowplot)
 theme_set(theme_minimal())
 
+library(caret)
 ##  Modelling packages
 library(TMB)
 #library(stantmb)
@@ -68,7 +77,6 @@ if(Sys.info()["sysname"] != 'Windows'){
 }
 library(INLAutils)
 library(sparseMVN)
-
 
 # Parallel processing
 library(foreach)
@@ -102,17 +110,36 @@ data <- load_data(PR_path,
                   shapefile_path, 
                   shapefile_pattern = '.shp$', 
                   useiso3 = 'IDN', 
-                  # pr_year = 2008,
-                  # api_year = 2014)
-                  pr_year = 2010,
+                  admin_unit_level = 'ADMIN2',
+                  pr_country = 'country',
                   api_year = 2012)
 
+data_ml_cov <- load_data(PR_path, 
+                         API_path, 
+                         pop_path, 
+                         ml_local_raster_paths, 
+                         shapefile_path, 
+                         shapefile_pattern = '.shp$', 
+                         useiso3 = 'IDN', 
+                         admin_unit_level = 'ADMIN2',
+                         pr_country = 'country',
+                         api_year = 2012)
 
-# indonesia
+data_all_cov <- load_data(PR_path, 
+                          API_path, 
+                          pop_path, 
+                          c(cov_raster_paths, ml_local_raster_paths), 
+                          shapefile_path, 
+                          shapefile_pattern = '.shp$', 
+                          useiso3 = 'IDN', 
+                          admin_unit_level = 'ADMIN2',
+                          pr_country = 'country',
+                          api_year = 2012)
+
 
 # pre analysis
 
-data_idn <- process_data(
+data_idn_cov <- process_data(
   binomial_positive = data$pr$positive,
   binomial_n = data$pr$examined,
   coords = data$pr[, c('longitude', 'latitude')],
@@ -125,123 +152,92 @@ data_idn <- process_data(
   cov_rasters = data$covs,
   useiso3 = 'IDN',
   transform = c(4:7))
-save(data_idn, file = 'model_outputs/idn_full_data.RData')
 
-autoplot(data_idn, pr_limits = c(0, 0.3))
+save(data_idn_cov, file = 'model_outputs/idn_cov_data.RData')
+
+data_idn_ml <- process_data(
+  binomial_positive = data_ml_cov$pr$positive,
+  binomial_n = data_ml_cov$pr$examined,
+  coords = data_ml_cov$pr[, c('longitude', 'latitude')],
+  polygon_response = data_ml_cov$api$api_mean,
+  polygon_population = data_ml_cov$api$population,
+  shapefile_id = data_ml_cov$api$shapefile_id,
+  shps_id_column = 'area_id',
+  shapefiles = data_ml_cov$shapefiles,
+  pop_raster = data_ml_cov$pop,
+  cov_rasters = data_ml_cov$covs,
+  useiso3 = 'IDN',
+  transform = NULL)
+save(data_idn_ml, file = 'model_outputs/idn_ml_data.RData')
+
+data_idn_all <- process_data(
+  binomial_positive = data_all_cov$pr$positive,
+  binomial_n = data_all_cov$pr$examined,
+  coords = data_all_cov$pr[, c('longitude', 'latitude')],
+  polygon_response = data_all_cov$api$api_mean,
+  polygon_population = data_all_cov$api$population,
+  shapefile_id = data_all_cov$api$shapefile_id,
+  shps_id_column = 'area_id',
+  shapefiles = data_all_cov$shapefiles,
+  pop_raster = data_all_cov$pop,
+  cov_rasters = data_all_cov$covs,
+  useiso3 = 'IDN',
+  transform = c(4:7))
+
+save(data_idn_all, file = 'model_outputs/idn_all_data.RData')
+
+
+autoplot(data_idn_cov, pr_limits = c(0, 0.3))
+autoplot(data_idn_cov, pr_limits = c(0, 0.3), trans = 'log1p')
+
 ggsave('figs/idn_input_data.png')
 
-mesh_idn <- build_mesh(data_idn, mesh.args = list(max.edge = c(0.5, 5), cut = 0.5))
+
+
+mesh_idn <- build_mesh(data_idn_cov, mesh.args = list(max.edge = c(0.7, 5), cut = 0.7))
 autoplot(mesh_idn)
 save(mesh_idn, file = 'model_outputs/idn_mesh.RData')
 
 
 
 # Define cross validation strategies
-data_cv1_idn <- cv_random_folds(data_idn, k = 10)
-autoplot(data_cv1_idn, jitter = 0.7)
+data_cv1_idn <- cv_random_folds(data_idn_cov, k = 6)
+data_cv1_idn_ml <- cv_random_folds(data_idn_ml, k = 6, 
+                                   polygon_folds = attr(data_cv1_idn, 'polygon_folds'),
+                                   pr_folds = attr(data_cv1_idn, 'pr_folds'))
+data_cv1_idn_all <- cv_random_folds(data_idn_all, k = 6, 
+                                    polygon_folds = attr(data_cv1_idn, 'polygon_folds'),
+                                    pr_folds = attr(data_cv1_idn, 'pr_folds'))
+
+
+autoplot(data_cv1_idn, jitter = 0)
+autoplot(data_cv1_idn_ml, jitter = 0)
+
 ggsave('figs/idn_cv_random.png')
 save(data_cv1_idn, file = 'model_outputs/idn_cv_1.RData')
+save(data_cv1_idn_ml, file = 'model_outputs/idn_cv_1_ml.RData')
+save(data_cv1_idn_all, file = 'model_outputs/idn_cv_1_all.RData')
 
 
 # Spatial
-data_cv2_idn <- cv_spatial_folds(data_idn, k = 7)
-autoplot(data_cv2_idn, jitter = 0.7)
+data_cv2_idn <- cv_spatial_folds(data_idn_cov, k = 6)
+data_cv2_idn_ml <- cv_spatial_folds(data_idn_ml, k = 6, 
+                                    polygon_folds = attr(data_cv2_idn, 'polygon_folds'),
+                                    pr_folds = attr(data_cv2_idn, 'pr_folds'))
+data_cv2_idn_all <- cv_spatial_folds(data_idn_all, k = 3, 
+                                     polygon_folds = attr(data_cv2_idn, 'polygon_folds'),
+                                     pr_folds = attr(data_cv2_idn, 'pr_folds'))
+
+autoplot(data_cv2_idn, jitter = 0)
+autoplot(data_cv2_idn_ml, jitter = 0)
+
 ggsave('figs/idn_cv_spatial2.png')
 save(data_cv2_idn, file = 'model_outputs/idn_cv_2.RData')
-
+save(data_cv2_idn_ml, file = 'model_outputs/idn_cv_2_ml.RData')
+save(data_cv2_idn_all, file = 'model_outputs/idn_cv_2_all.RData')
 
 #autoplot(data_cv1_idn[[1]]$train, pr_limits = c(0, 0.3))
 
-use_points <- 1
-use_polygons <- 1
-# run models
-# Run full model to get a handle on things.
-
-arg_list <- list(prior_rho_min = 3, # 
-                 prior_rho_prob = 0.00001, # Want p(rho < 3) = 0.0001
-                 prior_sigma_max = 1, # Want p(sd > 1) = 0.0001 (would explain most of prev). 
-                 prior_sigma_prob = 0.00001,
-                 prior_iideffect_sd_max = 0.05, 
-                 # The difference between m_low_pf and LCI(pois(m_mean_pf)), then converted to inc rate, then to prev ranges around 0-0.025. 
-                 # The 0.975 quantile of that (two sided) distribution is 0.005 prevalence. 
-                 # To explain 0.005 prevalence, we need a norm of 0.05. Fin.
-                 prior_iideffect_sd_prob = 0.0000001, # Made this stronger because too much iid.
-                 prior_iideffect_pr_sd_max = 0.3, # Max difference between PR points within a cell (with n > 500)
-                 prior_iideffect_pr_sd_prob = 0.0000001,
-                 priormean_intercept = -2,
-                 priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
-                 priormean_slope = 0, 
-                 priorsd_slope = 0.4, # Explains between 0.004 and 0.27 prevalence. 1 covariate shouldn't explain between 0 and 0.6 (range of prev).
-                 use_polygons = use_polygons,
-                 use_points = use_points)
-
-
-
-if(FALSE){
-  full_model <- fit_model(data_idn, mesh_idn, its = 1000, model.args = arg_list)
-  autoplot(full_model)
-  
-  png('figs/full_model_in_sample_map.png')
-  plot(full_model, layer = 'api')
-  dev.off()
-  
-  in_sample <- cv_performance(predictions = full_model$predictions, 
-                              holdout = data_idn,
-                              model_params = full_model$model, 
-                              CI = 0.8,
-                              use_points = use_points)
-  autoplot(in_sample, CI = TRUE)
-  autoplot(in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/idn_full_model_in_sample.png')
-  
-  save(full_model, file = 'model_outputs/full_model_idn.RData')
-  
-  
-  
-  arg_list[c('use_polygons', 'use_points')] <- c(0, 1)
-  points_model <- fit_model(data_idn, mesh_idn, its = 1000, model.args = arg_list)
-  autoplot(points_model)
-  png('figs/points_model_in_sample_map.png')
-  plot(points_model, layer = 'api')
-  dev.off()
-  
-  points_in_sample <- cv_performance(predictions = points_model$predictions, 
-                                     holdout = data_idn,
-                                     model_params = points_model$model, 
-                                     CI = 0.8,
-                                     use_points = use_points)
-  autoplot(points_in_sample, CI = TRUE)
-  autoplot(points_in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/idn_points_model_in_sample.png')
-  
-  
-  save(points_model, file = 'model_outputs/points_model_idn.RData')
-  
-  
-  
-  
-  
-  arg_list[c('use_polygons', 'use_points')] <- c(1, 0)
-  polygons_model <- fit_model(data_idn, mesh_idn, its = 1000, model.args = arg_list)
-  autoplot(polygons_model)
-  png('figs/polygons_model_in_sample_map.png')
-  plot(polygons_model, layer = 'api')
-  dev.off()
-  
-  polygons_in_sample <- cv_performance(predictions = polygons_model$predictions, 
-                                       holdout = data_idn,
-                                       model_params = polygons_model$model, 
-                                       CI = 0.8,
-                                       use_points = FALSE)
-  autoplot(polygons_in_sample, CI = TRUE)
-  autoplot(polygons_in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/idn_polygon_model_in_sample.png')
-  
-  save(polygons_model, file = 'model_outputs/polygons_model_idn.RData')
-  
-  
-  
-}
 
 
 
