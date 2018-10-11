@@ -4,7 +4,7 @@ cv_type <- args[2]
 data_type <- args[3]
 
 if(Sys.info()["user"] != 'anita'){
-  setwd('~/timz/timothy/polygon_ml')
+  setwd('~/timz/timothy/polygon_ml_wsc')
 } else {
   #setwd('~/Z/users/anita/point_polygon_join_comparison_analysis')
 }
