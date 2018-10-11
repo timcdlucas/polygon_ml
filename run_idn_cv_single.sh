@@ -18,9 +18,9 @@ fi
 N=6
 
 if [ "$1" == "random" ]; then
-   END=10
+   END=6
 elif [ "$1" == "spatial" ]; then
-   END=7
+   END=6
 fi
 
 
