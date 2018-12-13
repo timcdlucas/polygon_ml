@@ -19,20 +19,18 @@ API_path <- Z('GBD2017/Processing/Stages/04c_API_Data_Export/Checkpoint_Outputs/
 pop_path <- Z('GBD2017/Processing/Stages/03_Muster_Population_Figures/Verified_Outputs/Output_Pop_At_Risk_Pf_5K/ihme_corrected_frankenpop_All_Ages_3_2015_at_risk_pf.tif')
 shapefile_path <- Z('master_geometries/Admin_Units/Global/GBD/GBD2017_MAP/GBD2017_MAP_MG_5K/')
 
-
 cov_raster_paths <- c(
-  Z('mastergrids/MODIS_Global/MOD11A2_v6_LST/LST_Day/5km/Synoptic/LST_Day_v6.Synoptic.Overall.mean.5km.mean.tif'),
-  Z('mastergrids/MODIS_Global/MCD43D6_v6_BRDF_Reflectance/EVI_v6/5km/Synoptic/EVI_v6.Synoptic.Overall.mean.5km.mean.tif'),
+  Z('mastergrids/MODIS_Global/MOD11A2_LST/LST_Day/5km/Synoptic/LST_Day.Synoptic.Overall.mean.5km.mean.tif'),
+  #Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/EVI/5km/Synoptic/EVI.Synoptic.Overall.mean.5km.mean.tif'),
   Z('mastergrids/Other_Global_Covariates/TemperatureSuitability/TSI_Pf_Dynamic/5km/Synoptic/TSI-Martens2-Pf.Synoptic.Overall.Mean.5km.Data.tif'),
   Z('GBD2017/Processing/Static_Covariates/MAP/other_rasters/accessibility/accessibility.5k.MEAN.tif'),
   Z('mastergrids/Other_Global_Covariates/Elevation/SRTM-Elevation/5km/Synoptic/SRTM_elevation.Synoptic.Overall.Data.5km.mean.tif'),
-  Z('mastergrids/MODIS_Global/MOD11A2_v6_LST/LST_Day/5km/Synoptic/LST_Day_v6.Synoptic.Overall.SD.5km.mean.tif'),
+  Z('mastergrids/MODIS_Global/MOD11A2_LST/LST_Day/5km/Synoptic/LST_Day.Synoptic.Overall.SD.5km.mean.tif'),
   #Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCB/5km/Synoptic/TCB.Synoptic.Overall.mean.5km.mean.tif'),
   Z('mastergrids/Other_Global_Covariates/NightTimeLights/VIIRS_DNB_Monthly/5km/Annual/VIIRS-SLC.2016.Annual.5km.MEDIAN.tif'),
   #Z('mastergrids/Other_Global_Covariates/UrbanAreas/Global_Urban_Footprint/From_86m/5km/Global_Urban_Footprint_5km_PropUrban.tif'),
-  Z('mastergrids/MODIS_Global/MCD43D6_v6_BRDF_Reflectance/TCW_v6/5km/Synoptic/TCW_v6.Synoptic.Overall.mean.5km.mean.tif')
+  Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCW/5km/Synoptic/TCW.Synoptic.Overall.mean.5km.mean.tif')
 )
-
 
 # load packages
 
@@ -107,9 +105,9 @@ pr_min_year = 1990
 
 pr <- readr::read_csv(PR_path, guess_max  = 1e5)
 
-pr_region <- 'SouthEastAsia'
+pr_region <- 'country'
 if(pr_region == 'country'){
-  usecountries <- find_country_from_iso3(useiso3, api_full$iso3, api_full$country_name)
+  usecountries <- 'Madagascar'
 } else if(pr_region == 'SouthEastAsia'){
   usecountries <- c("Indonesia", "Papua New Guinea", "Malaysia", "Phillipines", "Thailand", "Laos", "Myanmar", "Cambodia", "Vietnam")
 } else if(pr_region == 'SouthAmerica'){
@@ -165,153 +163,139 @@ m <- list()
 y <- pr_clean$prevalence
 partition <- createMultiFolds(y, k = 5, times = 1)
 
-models <- c('enet', 'gbm', 'ranger', 'ppr', 'nnet')
-tuneLength_vec <- c(10, 10, 10, 10, 10)
+models <- c('enet', 'xgbTree', 'ranger', 'ppr', 'bartMachine')
+tuneLength_vec <- c(10, 10, 10, 10, 1)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
 m[[1]] <- train(pr_extracted, y, 
-                     method = models[1],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[1],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[1],
-                     weights = pr_clean$examined)
-                     
+                method = models[1],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[1],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[1],
+                weights = pr_clean$examined)
+
 
 
 
 m[[2]] <- train(pr_extracted, y, 
-                     method = models[2],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[2],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[2])
-                     
+                method = models[2],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[2],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[2])
 
 
 
 
 
+tic()
 m[[3]] <- train(pr_extracted, y, 
-                     method = models[3],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[3],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[3])
-                     
+                method = models[3],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[3],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[3])
+toc()
 
 
 m[[4]] <- train(pr_extracted, y, 
-                     method = 'ppr',
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[4],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[4])
-                     
+                method = models[4],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[4],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[4])
 
 
+tic()
 m[[5]] <- train(pr_extracted, y, 
-                     method = 'nnet',
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[5],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[5],
-                     linout = TRUE)
-                     
+                method = models[5],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[5],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[5])
+toc()
 
-
-
-png('figs/enetopt_idn.png')
+png('figs/enetopt_mdg.png')
 print(plot(m[[1]]))
 dev.off()
 
-png('figs/ppropt_idn.png')
+png('figs/ppropt_mdg.png')
 print(plot(m[[4]]))
 dev.off()
 
 
 p <- plotCV(m[[1]])
 p + xlim(0, NA)
-ggsave('figs/enet_obspred_idn.png')
+ggsave('figs/enet_obspred_mdg.png')
 
 
 p <- plotCV(m[[2]])
 p + xlim(0, NA)
-ggsave('figs/gbm_obspred_idn.png')
+ggsave('figs/xgboost_obspred_mdg.png')
 
 p <- plotCV(m[[3]])
 p + xlim(0, NA)
-ggsave('figs/ranger_obspred_idn.png')
+ggsave('figs/ranger_obspred_mdg.png')
 
 p <- plotCV(m[[4]])
 p + xlim(0, NA)
-ggsave('figs/ppr_obspred_idn.png')
+ggsave('figs/ppr_obspred_mdg.png')
 
-p <- plotCV(m[[5]])
-p + xlim(0, NA)
-ggsave('figs/nnet_obspred_idn.png')
 
 compare_models(m[[1]], m[[2]])
-ggsave('figs/comp_enet_gbm_idn.png')
+ggsave('figs/comp_enet_xgb_mdg.png')
 
 compare_models(m[[3]], m[[2]])
-ggsave('figs/comp_ranger_gbm_idn.png')
+ggsave('figs/comp_ranger_xgb_mdg.png')
 
 compare_models(m[[4]], m[[2]])
-ggsave('figs/comp_ppr_gbm_idn.png')
+ggsave('figs/comp_ppr_xgb_mdg.png')
+
+save(m, file = 'model_outputs/madagascar_ml_mdg.RData')
 
 
-compare_models(m[[5]], m[[2]])
-ggsave('figs/comp_nnet_gbm_idn.png')
-
-save(m, file = 'model_outputs/south_east_asia_ml_idn.RData')
+m <- m[-2]
 
 
+extent_mdg <- c(35, 52, -30, -10)
+covs_crop_mdg <- crop(covs, extent_mdg)
+covs_mdg_mat <- getValues(covs_crop_mdg)
+
+pred <- matrix(NA, nrow = nrow(covs_mdg_mat), ncol = length(m))
+
+nas <- complete.cases(covs_mdg_mat)
 
 
+pred[nas, ] <- predict(m, newdata = covs_mdg_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
 
-extent_idn <- c(90, 150, -15, 10)
-covs_crop_idn <- crop(covs, extent_idn)
-covs_idn_mat <- getValues(covs_crop_idn)
-
-pred <- matrix(NA, nrow = nrow(covs_idn_mat), ncol = length(m))
- 
-nas <- complete.cases(covs_idn_mat)
+r.pts <- rasterToPoints(covs_crop_mdg, spatial = TRUE)
 
 
-pred[nas, ] <- predict(m, newdata = covs_idn_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+pred_rast_mdg <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_mdg[pred_rast_mdg < 0] <- 0
+pred_rast_mdg_inc <- calc(pred_rast_mdg, qlogis)
+names(pred_rast_mdg_inc) <- sapply(m, function(x) x$method)
 
-r.pts <- rasterToPoints(covs_crop_idn, spatial = TRUE)
+projection(pred_rast_mdg_inc) <- projection(covs)
 
-
-pred_rast_idn <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_idn[pred_rast_idn < 0] <- 0
-pred_rast_idn_inc <- calc(pred_rast_idn, qlogis)
-names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
-
-projection(pred_rast_idn_inc) <- projection(covs)
-
-writeRaster(pred_rast_idn_inc, 
-            paste0('model_outputs/ml_pred_rasters/south_asia_idn_', sapply(m, function(x) x$method), '.tif'),
+writeRaster(pred_rast_mdg_inc, 
+            paste0('model_outputs/ml_pred_rasters/madagascar_mdg_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
             options = c('COMPRESS' = 'LZW'))
-            
 
 
-png('figs/IDN_all_ml.png', height = 1500, width = 1500)
-plot(pred_rast_idn_inc)
-dev.off()
 
 
 
