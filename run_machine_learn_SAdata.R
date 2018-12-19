@@ -19,18 +19,20 @@ API_path <- Z('GBD2017/Processing/Stages/04c_API_Data_Export/Checkpoint_Outputs/
 pop_path <- Z('GBD2017/Processing/Stages/03_Muster_Population_Figures/Verified_Outputs/Output_Pop_At_Risk_Pf_5K/ihme_corrected_frankenpop_All_Ages_3_2015_at_risk_pf.tif')
 shapefile_path <- Z('master_geometries/Admin_Units/Global/GBD/GBD2017_MAP/GBD2017_MAP_MG_5K/')
 
+
 cov_raster_paths <- c(
-  Z('mastergrids/MODIS_Global/MOD11A2_LST/LST_Day/5km/Synoptic/LST_Day.Synoptic.Overall.mean.5km.mean.tif'),
-  #Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/EVI/5km/Synoptic/EVI.Synoptic.Overall.mean.5km.mean.tif'),
+  Z('mastergrids/MODIS_Global/MOD11A2_v6_LST/LST_Day/5km/Synoptic/LST_Day_v6.Synoptic.Overall.mean.5km.mean.tif'),
+  Z('mastergrids/MODIS_Global/MCD43D6_v6_BRDF_Reflectance/EVI_v6/5km/Synoptic/EVI_v6.Synoptic.Overall.mean.5km.mean.tif'),
   Z('mastergrids/Other_Global_Covariates/TemperatureSuitability/TSI_Pf_Dynamic/5km/Synoptic/TSI-Martens2-Pf.Synoptic.Overall.Mean.5km.Data.tif'),
   Z('GBD2017/Processing/Static_Covariates/MAP/other_rasters/accessibility/accessibility.5k.MEAN.tif'),
   Z('mastergrids/Other_Global_Covariates/Elevation/SRTM-Elevation/5km/Synoptic/SRTM_elevation.Synoptic.Overall.Data.5km.mean.tif'),
-  Z('mastergrids/MODIS_Global/MOD11A2_LST/LST_Day/5km/Synoptic/LST_Day.Synoptic.Overall.SD.5km.mean.tif'),
+  Z('mastergrids/MODIS_Global/MOD11A2_v6_LST/LST_Day/5km/Synoptic/LST_Day_v6.Synoptic.Overall.SD.5km.mean.tif'),
   #Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCB/5km/Synoptic/TCB.Synoptic.Overall.mean.5km.mean.tif'),
   Z('mastergrids/Other_Global_Covariates/NightTimeLights/VIIRS_DNB_Monthly/5km/Annual/VIIRS-SLC.2016.Annual.5km.MEDIAN.tif'),
   #Z('mastergrids/Other_Global_Covariates/UrbanAreas/Global_Urban_Footprint/From_86m/5km/Global_Urban_Footprint_5km_PropUrban.tif'),
-  Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCW/5km/Synoptic/TCW.Synoptic.Overall.mean.5km.mean.tif')
+  Z('mastergrids/MODIS_Global/MCD43D6_v6_BRDF_Reflectance/TCW_v6/5km/Synoptic/TCW_v6.Synoptic.Overall.mean.5km.mean.tif')
 )
+
 
 # load packages
 
@@ -161,9 +163,9 @@ m <- list()
 y <- pr_clean$prevalence
 partition <- createMultiFolds(y, k = 5, times = 1)
 
-models <- c('enet', 'xgbTree', 'ranger', 'ppr', 'nnet')
+models <- c('enet', 'gbm', 'ranger', 'ppr', 'nnet')
 tuneLength_vec <- c(10, 10, 10, 10, 10)
-search_vec <- c('grid', 'random', 'random', 'grid')
+search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
 m[[1]] <- train(pr_extracted, y, 
                      method = models[1],
@@ -204,7 +206,7 @@ m[[3]] <- train(pr_extracted, y,
 
 
 m[[4]] <- train(pr_extracted, y, 
-                     method = 'ppr',
+                     method = models[4],
                      trControl = trainControl(index = partition, 
                                               returnData = TRUE,
                                               savePredictions = TRUE, 
@@ -212,6 +214,19 @@ m[[4]] <- train(pr_extracted, y,
                                               predictionBounds = c(0, 1)),
                      tuneLength = tuneLength_vec[4])
                      
+
+m[[5]] <- train(pr_extracted, y, 
+                     method = models[5],
+                     trControl = trainControl(index = partition, 
+                                              returnData = TRUE,
+                                              savePredictions = TRUE, 
+                                              search = search_vec[5],
+                                              predictionBounds = c(0, 1)),
+                     tuneLength = tuneLength_vec[5],
+                     linout = TRUE)
+                     
+
+
 
 
 
@@ -223,6 +238,10 @@ png('figs/ppropt_sa.png')
 print(plot(m[[4]]))
 dev.off()
 
+png('figs/nnetopt_sa.png')
+print(plot(m[[5]]))
+dev.off()
+
 
 p <- plotCV(m[[1]])
 p + xlim(0, NA)
@@ -231,7 +250,7 @@ ggsave('figs/enet_obspred_sa.png')
 
 p <- plotCV(m[[2]])
 p + xlim(0, NA)
-ggsave('figs/xgboost_obspred_sa.png')
+ggsave('figs/gbm_obspred_sa.png')
 
 p <- plotCV(m[[3]])
 p + xlim(0, NA)
@@ -242,14 +261,23 @@ p + xlim(0, NA)
 ggsave('figs/ppr_obspred_sa.png')
 
 
+
+p <- plotCV(m[[5]])
+p + xlim(0, NA)
+ggsave('figs/nnet_obspred_sa.png')
+
+
 compare_models(m[[1]], m[[2]])
-ggsave('figs/comp_enet_xgb.png')
+ggsave('figs/comp_enet_gbm_sa.png')
 
 compare_models(m[[3]], m[[2]])
-ggsave('figs/comp_ranger_xgb.png')
+ggsave('figs/comp_ranger_gbm_sa.png')
 
 compare_models(m[[4]], m[[2]])
-ggsave('figs/comp_ppr_xgb.png')
+ggsave('figs/comp_ppr_gbm_sa.png')
+
+compare_models(m[[5]], m[[2]])
+ggsave('figs/comp_nnet_gbm_sa.png')
 
 save(m, file = 'model_outputs/global_ml_sa.RData')
 
@@ -274,15 +302,20 @@ pred_rast_col_inc <- calc(pred_rast_col, PrevIncConversion)
 names(pred_rast_col_inc) <- sapply(m, function(x) x$method)
 
 
+projection(pred_rast_col_inc) <- projection(covs)
+
+
 writeRaster(pred_rast_col_inc, 
-            paste0('model_outputs/ml_pred_rasters/sa_col', sapply(m, function(x) x$method), '.tif'),
+            paste0('model_outputs/ml_pred_rasters/sa_col_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
             options = c('COMPRESS' = 'LZW'))
             
 
 
-
+png('figs/SA_all_ml.png', height = 1500, width = 1500)
+plot(pred_rast_col_inc)
+dev.off()
 
 
 

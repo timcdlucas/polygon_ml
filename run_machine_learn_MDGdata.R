@@ -35,7 +35,6 @@ cov_raster_paths <- c(
 
 
 # load packages
-
 ## Spatial packages
 library(raster)
 library(maptools)
@@ -107,9 +106,9 @@ pr_min_year = 1990
 
 pr <- readr::read_csv(PR_path, guess_max  = 1e5)
 
-pr_region <- 'SouthEastAsia'
+pr_region <- 'country'
 if(pr_region == 'country'){
-  usecountries <- find_country_from_iso3(useiso3, api_full$iso3, api_full$country_name)
+  usecountries <- 'Madagascar'
 } else if(pr_region == 'SouthEastAsia'){
   usecountries <- c("Indonesia", "Papua New Guinea", "Malaysia", "Phillipines", "Thailand", "Laos", "Myanmar", "Cambodia", "Vietnam")
 } else if(pr_region == 'SouthAmerica'){
@@ -230,88 +229,83 @@ m[[5]] <- train(pr_extracted, y,
                      
 
 
-
-png('figs/enetopt_idn.png')
+png('figs/enetopt_mdg.png')
 print(plot(m[[1]]))
 dev.off()
 
-png('figs/ppropt_idn.png')
+png('figs/ppropt_mdg.png')
 print(plot(m[[4]]))
 dev.off()
 
 
 p <- plotCV(m[[1]])
 p + xlim(0, NA)
-ggsave('figs/enet_obspred_idn.png')
+ggsave('figs/enet_obspred_mdg.png')
 
 
 p <- plotCV(m[[2]])
 p + xlim(0, NA)
-ggsave('figs/gbm_obspred_idn.png')
+ggsave('figs/xgboost_obspred_mdg.png')
 
 p <- plotCV(m[[3]])
 p + xlim(0, NA)
-ggsave('figs/ranger_obspred_idn.png')
+ggsave('figs/ranger_obspred_mdg.png')
 
 p <- plotCV(m[[4]])
 p + xlim(0, NA)
-ggsave('figs/ppr_obspred_idn.png')
+ggsave('figs/ppr_obspred_mdg.png')
 
-p <- plotCV(m[[5]])
+p <- plotCV(m[[4]])
 p + xlim(0, NA)
-ggsave('figs/nnet_obspred_idn.png')
+ggsave('figs/nnet_obspred_mdg.png')
 
 compare_models(m[[1]], m[[2]])
-ggsave('figs/comp_enet_gbm_idn.png')
+ggsave('figs/comp_enet_xgb_mdg.png')
 
 compare_models(m[[3]], m[[2]])
-ggsave('figs/comp_ranger_gbm_idn.png')
+ggsave('figs/comp_ranger_xgb_mdg.png')
 
 compare_models(m[[4]], m[[2]])
-ggsave('figs/comp_ppr_gbm_idn.png')
+ggsave('figs/comp_ppr_xgb_mdg.png')
 
-
-compare_models(m[[5]], m[[2]])
-ggsave('figs/comp_nnet_gbm_idn.png')
-
-save(m, file = 'model_outputs/south_east_asia_ml_idn.RData')
+save(m, file = 'model_outputs/madagascar_ml_mdg.RData')
 
 
 
+extent_mdg <- c(35, 52, -30, -10)
+covs_crop_mdg <- crop(covs, extent_mdg)
+covs_mdg_mat <- getValues(covs_crop_mdg)
+
+pred <- matrix(NA, nrow = nrow(covs_mdg_mat), ncol = length(m))
+
+nas <- complete.cases(covs_mdg_mat)
 
 
-extent_idn <- c(90, 150, -15, 10)
-covs_crop_idn <- crop(covs, extent_idn)
-covs_idn_mat <- getValues(covs_crop_idn)
+pred[nas, ] <- predict(m, newdata = covs_mdg_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
 
-pred <- matrix(NA, nrow = nrow(covs_idn_mat), ncol = length(m))
- 
-nas <- complete.cases(covs_idn_mat)
+r.pts <- rasterToPoints(covs_crop_mdg, spatial = TRUE)
 
 
-pred[nas, ] <- predict(m, newdata = covs_idn_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+pred_rast_mdg <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_mdg[pred_rast_mdg < 0] <- 0
+pred_rast_mdg_inc <- calc(pred_rast_mdg, qlogis)
+names(pred_rast_mdg_inc) <- sapply(m, function(x) x$method)
 
-r.pts <- rasterToPoints(covs_crop_idn, spatial = TRUE)
+projection(pred_rast_mdg_inc) <- projection(covs)
 
-
-pred_rast_idn <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_idn[pred_rast_idn < 0] <- 0
-pred_rast_idn_inc <- calc(pred_rast_idn, qlogis)
-names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
-
-projection(pred_rast_idn_inc) <- projection(covs)
-
-writeRaster(pred_rast_idn_inc, 
-            paste0('model_outputs/ml_pred_rasters/south_asia_idn_', sapply(m, function(x) x$method), '.tif'),
+writeRaster(pred_rast_mdg_inc, 
+            paste0('model_outputs/ml_pred_rasters/madagascar_mdg_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
             options = c('COMPRESS' = 'LZW'))
-            
 
 
-png('figs/IDN_all_ml.png', height = 1500, width = 1500)
-plot(pred_rast_idn_inc)
+
+png('figs/MDG_all_ml.png', height = 1500, width = 1500)
+plot(pred_rast_mdg_inc)
 dev.off()
+
+
 
 
 

@@ -19,4 +19,6 @@ The scripts `run_analysis_idn.R` and `run_analysis_col.R` are the main scripts t
 
 Indonesia and Colombia
 
-Environmental covariates vs global PR ML vs global PR ML + environmental.
+Environmental covariates vs global PR ML vs global PR ML + environmental vs Just ML (no polygon).
+
+
