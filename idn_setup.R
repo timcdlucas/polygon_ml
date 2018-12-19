@@ -224,7 +224,7 @@ data_cv2_idn <- cv_spatial_folds(data_idn_cov, k = 6)
 data_cv2_idn_ml <- cv_spatial_folds(data_idn_ml, k = 6, 
                                     polygon_folds = attr(data_cv2_idn, 'polygon_folds'),
                                     pr_folds = attr(data_cv2_idn, 'pr_folds'))
-data_cv2_idn_all <- cv_spatial_folds(data_idn_all, k = 3, 
+data_cv2_idn_all <- cv_spatial_folds(data_idn_all, k = 6, 
                                      polygon_folds = attr(data_cv2_idn, 'polygon_folds'),
                                      pr_folds = attr(data_cv2_idn, 'pr_folds'))
 
