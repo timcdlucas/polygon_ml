@@ -377,11 +377,12 @@ autoplot(cv1_output1, type = 'obs_preds', CI = F)
 ggsave('figs/mdg_covs_oonly_obspred.png')
 autoplot(cv1_output1, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_covs_only_obspred_log.png')
+save(cv1_output1, file = 'model_outputs/mdg_covs_cv_1.RData')
 
 cat('Start cv1 model 2\n')
 
 cv1_output2 <- run_cv(data_cv1_mdg_ml, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 1)
 obspred_map(data_cv1_mdg, cv1_output2, column = FALSE)
 ggsave('figs/mdg_ml_only_obspred_map.png')
 obspred_map(data_cv1_mdg, cv1_output2, trans = 'log10', column = FALSE)
@@ -390,11 +391,12 @@ autoplot(cv1_output2, type = 'obs_preds', CI = FALSE)
 ggsave('figs/mdg_ml_only_obspred.png')
 autoplot(cv1_output2, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_ml_only_obspred_log.png')
+save(cv1_output2, file = 'model_outputs/mdg_ml_cv_1.RData')
 
 cat('Start cv1 model 3\n')
 
 cv1_output3 <- run_cv(data_cv1_mdg_all, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 1)
 obspred_map(data_cv1_mdg, cv1_output3, column = FALSE)
 ggsave('figs/mdg_all_obspred_map.png')
 obspred_map(data_cv1_mdg, cv1_output3, trans = 'log10', column = FALSE)
@@ -404,9 +406,6 @@ ggsave('figs/mdg_all_obspred.png')
 autoplot(cv1_output3, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_all_obspred_log.png')
 
-
-save(cv1_output1, file = 'model_outputs/mdg_covs_cv_1.RData')
-save(cv1_output2, file = 'model_outputs/mdg_ml_cv_1.RData')
 save(cv1_output3, file = 'model_outputs/mdg_all_cv_1.RData')
 
 cv1_output1$summary$polygon_metrics
