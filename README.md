@@ -5,10 +5,11 @@ title: A comparison of malaria predictions using polygon models vs polygons mode
 
 
 
-1. Use Colombia + Indonesia as case studies.
+1. Use Colombia, Madagascar, Indonesia and 1 or two more as case studies.
 2. do cross validation on polygon.
 5. probably want random cv and spatial cv?
-7. spatial only. but need to choose year/year range.
+6. Continue pre tests. Test positive constraint.
+7. Move to global and local ML models.
 8. compare Mae.
 
 
