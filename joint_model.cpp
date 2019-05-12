@@ -89,6 +89,8 @@ DATA_VECTOR(pointtested);
 PARAMETER(intercept); // intercept
 PARAMETER_VECTOR(slope); 
 
+Type scaled_slope = exp(slope);
+
 
 
 DATA_SCALAR(priormean_intercept); // = -4.0; 
@@ -255,7 +257,7 @@ logit_prevalence_point_field = Apoint * nodemean;
 
 // Point data likelihood
 vector<Type> point_linear_pred(pointn);
-point_linear_pred = intercept + pointx*slope +
+point_linear_pred = intercept + pointx * scaled_slope +
   logit_prevalence_point_field.array();
 
 // Hopefully vectorised dbinom.
@@ -290,7 +292,7 @@ vector<Type> logit_prevalence_pixel_field(pixn);
 logit_prevalence_pixel_field = Apixel * nodemean;
 
 vector<Type> pixel_linear_pred(pixn);
-pixel_linear_pred = intercept + x*slope +
+pixel_linear_pred = intercept + x * scaled_slope +
   logit_prevalence_pixel_field.array();
 
 REPORT(pixel_linear_pred);
