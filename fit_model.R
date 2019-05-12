@@ -332,6 +332,8 @@ makeLinearPredictor <- function(pars, data, field_ras, shapefile_ras, shapefile_
   for(i in seq_len(nlayers(data$cov_rasters))){
     covs_by_betas[[i]] <- exp(pars$slope[i]) * data$cov_rasters[[i]]
   }
+
+  if(!('intercept' %in% names(pars))) pars$intercept <- 0
   
   cov_by_betas <- stack(covs_by_betas)
   cov_contribution <- sum(cov_by_betas) + pars$intercept
