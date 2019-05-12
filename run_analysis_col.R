@@ -370,7 +370,7 @@ if(FALSE){
 cat('Start cv1 model 1\n')
 
 cv1_output1 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 1)
 obspred_map(data_cv1_col, cv1_output1, column = FALSE, mask = TRUE)
 ggsave('figs/col_covs_only_obspred_map.png')
 obspred_map(data_cv1_col, cv1_output1, trans = 'log10', column = FALSE, mask = TRUE)
@@ -379,11 +379,12 @@ autoplot(cv1_output1, type = 'obs_preds', CI = FALSE)
 ggsave('figs/col_covs_oonly_obspred.png')
 autoplot(cv1_output1, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/col_covs_only_obspred_log.png')
+save(cv1_output1, file = 'model_outputs/col_covs_cv_1.RData')
 
 cat('Start cv1 model 2\n')
 
 cv1_output2 <- run_cv(data_cv1_col_ml, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 1)
 obspred_map(data_cv1_col, cv1_output2, column = FALSE, mask = TRUE)
 ggsave('figs/col_ml_only_obspred_map.png')
 obspred_map(data_cv1_col, cv1_output2, trans = 'log10', column = FALSE, mask = TRUE)
@@ -392,11 +393,12 @@ autoplot(cv1_output2, type = 'obs_preds', CI = FALSE)
 ggsave('figs/col_ml_only_obspred.png')
 autoplot(cv1_output2, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/col_ml_only_obspred_log.png')
+save(cv1_output2, file = 'model_outputs/col_ml_cv_1.RData')
 
 cat('Start cv1 model 3\n')
 
 cv1_output3 <- run_cv(data_cv1_col_all, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 1)
 obspred_map(data_cv1_col, cv1_output3, column = FALSE, mask = TRUE)
 ggsave('figs/col_all_obspred_map.png')
 obspred_map(data_cv1_col, cv1_output3, trans = 'log10', column = FALSE, mask = TRUE)
@@ -406,9 +408,6 @@ ggsave('figs/col_all_obspred.png')
 autoplot(cv1_output3, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/col_all_obspred_log.png')
 
-
-save(cv1_output1, file = 'model_outputs/col_covs_cv_1.RData')
-save(cv1_output2, file = 'model_outputs/col_ml_cv_1.RData')
 save(cv1_output3, file = 'model_outputs/col_all_cv_1.RData')
 
 cv1_output1$summary$polygon_metrics
@@ -481,6 +480,11 @@ cv2_output3$summary$pr_metrics
 
 
 
+
+
+# Final plots
+
+d <- rbind(
 
 
 

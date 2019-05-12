@@ -81,7 +81,7 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
   dyn.load(dynlib("joint_model"))
   
   
-  parameters <- list(intercept = -5,
+  parameters <- list(intercept = 0,
                      slope = rep(0, nlayers(data$cov_rasters)),
                      iideffect = rep(0, length(overlap)),
                      iideffect_log_tau = 1,
@@ -120,7 +120,8 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
   
   if(!use_points){
     fix <- list(iideffect_pr_log_tau = factor(NA), 
-                iideffect_pr = factor(rep(NA, nrow(data$pr))))
+                iideffect_pr = factor(rep(NA, nrow(data$pr))),
+                intercept = factor(NA))
     parameters$iideffect_pr_log_tau <- -100
   } else {
     fix <- list()
@@ -329,7 +330,7 @@ makeLinearPredictor <- function(pars, data, field_ras, shapefile_ras, shapefile_
   
   covs_by_betas <- list()
   for(i in seq_len(nlayers(data$cov_rasters))){
-    covs_by_betas[[i]] <- pars$slope[i] * data$cov_rasters[[i]]
+    covs_by_betas[[i]] <- exp(pars$slope[i]) * data$cov_rasters[[i]]
   }
   
   cov_by_betas <- stack(covs_by_betas)

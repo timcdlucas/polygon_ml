@@ -252,8 +252,8 @@ arg_list <- list(prior_rho_min = 1, #
                  prior_iideffect_pr_sd_prob = 0.0000001,
                  priormean_intercept = -2,
                  priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
-                 priormean_slope = 0, 
-                 priorsd_slope = 0.4, # Explains between 0.004 and 0.27 prevalence. 1 covariate shouldn't explain between 0 and 0.6 (range of prev).
+                 priormean_slope = -1.61, 
+                 priorsd_slope = 0.6, # Explains between 0.004 and 0.27 prevalence. 1 covariate shouldn't explain between 0 and 0.6 (range of prev).
                  use_polygons = use_polygons,
                  use_points = use_points)
 
@@ -377,11 +377,12 @@ autoplot(cv1_output1, type = 'obs_preds', CI = F)
 ggsave('figs/mdg_covs_oonly_obspred.png')
 autoplot(cv1_output1, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_covs_only_obspred_log.png')
+save(cv1_output1, file = 'model_outputs/mdg_covs_cv_1.RData')
 
 cat('Start cv1 model 2\n')
 
 cv1_output2 <- run_cv(data_cv1_mdg_ml, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 1)
 obspred_map(data_cv1_mdg, cv1_output2, column = FALSE)
 ggsave('figs/mdg_ml_only_obspred_map.png')
 obspred_map(data_cv1_mdg, cv1_output2, trans = 'log10', column = FALSE)
@@ -390,11 +391,12 @@ autoplot(cv1_output2, type = 'obs_preds', CI = FALSE)
 ggsave('figs/mdg_ml_only_obspred.png')
 autoplot(cv1_output2, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_ml_only_obspred_log.png')
+save(cv1_output2, file = 'model_outputs/mdg_ml_cv_1.RData')
 
 cat('Start cv1 model 3\n')
 
 cv1_output3 <- run_cv(data_cv1_mdg_all, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 1)
 obspred_map(data_cv1_mdg, cv1_output3, column = FALSE)
 ggsave('figs/mdg_all_obspred_map.png')
 obspred_map(data_cv1_mdg, cv1_output3, trans = 'log10', column = FALSE)
@@ -404,9 +406,6 @@ ggsave('figs/mdg_all_obspred.png')
 autoplot(cv1_output3, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_all_obspred_log.png')
 
-
-save(cv1_output1, file = 'model_outputs/mdg_covs_cv_1.RData')
-save(cv1_output2, file = 'model_outputs/mdg_ml_cv_1.RData')
 save(cv1_output3, file = 'model_outputs/mdg_all_cv_1.RData')
 
 cv1_output1$summary$polygon_metrics
