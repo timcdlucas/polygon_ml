@@ -89,7 +89,8 @@ DATA_VECTOR(pointtested);
 PARAMETER(intercept); // intercept
 PARAMETER_VECTOR(slope); 
 
-Type scaled_slope = exp(slope);
+vector<Type> scaled_slope;
+scaled_slope = exp(slope);
 
 
 
