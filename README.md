@@ -3,7 +3,7 @@
 title: A comparison of malaria predictions using polygon models vs polygons models as a meta learner.
 ---
 
-
+Expansion of previous analysis. This one is aiming for a journal somewhere.
 
 1. Use Colombia, Madagascar, Indonesia and 1 or two more as case studies.
 2. do cross validation on polygon.
