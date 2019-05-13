@@ -5,7 +5,7 @@
 ###########
 
 if(Sys.info()["user"] != 'anita'){
-  setwd('~/timz/timothy/polygon_ml_wsc')
+  setwd('~/timz/timothy/polygon_ml')
 } else {
   #setwd('~/Z/users/anita/point_polygon_join_comparison_analysis')
 }

@@ -5,7 +5,7 @@
 ###########
 
 if(Sys.info()["user"] != 'anita'){
-  setwd('~/timz/timothy/polygon_ml_wsc')
+  setwd('~/timz/timothy/polygon_ml')
 } else {
   #setwd('~/Z/users/anita/point_polygon_join_comparison_analysis')
 }
@@ -163,7 +163,7 @@ m <- list()
 y <- pr_clean$prevalence
 partition <- createMultiFolds(y, k = 5, times = 1)
 
-models <- c('enet', 'gbm', 'ranger', 'ppr', 'nnet')
+models <- c('enet', 'xgbTree', 'ranger', 'ppr', 'nnet')
 tuneLength_vec <- c(10, 10, 10, 10, 10)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
@@ -187,7 +187,8 @@ m[[2]] <- train(pr_extracted, y,
                                               savePredictions = TRUE, 
                                               search = search_vec[2],
                                               predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[2])
+                     tuneLength = tuneLength_vec[2],
+                     base_score = mean(y))
                      
 
 

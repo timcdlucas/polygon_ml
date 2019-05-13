@@ -293,7 +293,7 @@ if(FALSE){
   
   
   
-  full_model_ml <- fit_model(data_ml_cov, mesh_mdg, its = 1000, model.args = arg_list)
+  full_model_ml <- fit_model(data_mdg_ml, mesh_mdg, its = 1000, model.args = arg_list)
   autoplot(full_model_ml)
   
   png('figs/full_model_ml_in_sample_map.png')
@@ -318,6 +318,10 @@ if(FALSE){
                                  holdout = data_ml_cov,
                                  model_params = full_model_ml$model, 
                                  CI = 0.8,
+                                 priormean_intercept = -2,
+                                 priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
+                                 priormean_intercept = -2,
+                                 priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
                                  use_points = use_points)
   autoplot(in_sample_ml, CI = TRUE)
   autoplot(in_sample_ml, trans = 'log1p', CI = TRUE)
