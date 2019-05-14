@@ -140,6 +140,9 @@ if(!is.null(standardisePR)){
   } else {
     pr_clean$positive <- pr_clean$examined * prev_stand
   }
+  
+  pr_clean <- pr_clean %>% mutate(prevalence = positive / examined)
+  
 }  
 
 
@@ -163,7 +166,7 @@ m <- list()
 y <- pr_clean$prevalence
 partition <- createMultiFolds(y, k = 5, times = 1)
 
-models <- c('enet', 'xgbTree', 'ranger', 'ppr', 'nnet')
+models <- c('enet', 'gbm', 'ranger', 'ppr', 'nnet')
 tuneLength_vec <- c(10, 10, 10, 10, 10)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
@@ -187,8 +190,7 @@ m[[2]] <- train(pr_extracted, y,
                                               savePredictions = TRUE, 
                                               search = search_vec[2],
                                               predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[2],
-                     base_score = mean(y))
+                     tuneLength = tuneLength_vec[2])
                      
 
 

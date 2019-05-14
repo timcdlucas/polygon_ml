@@ -753,8 +753,8 @@ m <- list()
 y <- pr_clean$prevalence
 partition <- createMultiFolds(y, k = 3, times = 1)
 
-models <- c('enet', 'xgbTree', 'ranger', 'ppr', 'nnet')
-tuneLength_vec <- c(10, 2, 2, 10, 2)
+models <- c('enet', 'gbm', 'ranger', 'ppr', 'nnet')
+tuneLength_vec <- c(10, 10, 10, 10, 10)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
 m[[1]] <- train(pr_extracted, y, 
