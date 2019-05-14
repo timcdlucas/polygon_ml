@@ -24,17 +24,17 @@
 
 
 fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 100){
-
+  
   
   startendindex <- make_startend_index(data)
-
+  
   # Sort out mesh bits
   spde <- (inla.spde2.matern(mesh, alpha = 2)$param.inla)[c("M0", "M1", "M2")]	
   Apix <- inla.mesh.project(mesh, loc = as.matrix(data$coords))$A
   Apoint <- inla.mesh.project(mesh, loc = as.matrix(data$pr[, c('longitude', 'latitude')]))$A
   n_s <- nrow(spde$M0)
   
-
+  
   # TODO think about this more.
   data$covs[is.na(data$covs)] <- 0
   data$pr_covs[is.na(data$pr_covs)] <- 0
@@ -42,7 +42,7 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
   cov_matrix <- as.matrix(data$covs[, -c(1:2)])
   
   
-
+  
   prior_rho_min = 3
   prior_rho_prob = 0.00001
   prior_sigma_max = 1
@@ -57,14 +57,14 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
   priorsd_slope = 0.4
   use_polygons = 0
   use_points = 1
-
-
+  
+  
   # Replace defaults with anything given in model.args
   if(!is.null(model.args)){
     here <- environment()
     list2env(model.args, here)
   }
-
+  
   # Construct vector of length PR data where each value is the element of polygon enclosing that point
   overlap <- unique(c(data$polygon$shapefile_id, data$pr$shapefile_id))
   if(length(overlap) > length(data$polygon$shapefile_id)) {
@@ -76,12 +76,12 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
   pointtopolygonmap <- match(data$pr$shapefile_id, overlap)
   
   # Compile and load the model
-
+  
   #dyn.unload(dynlib("joint_model"))
   dyn.load(dynlib("joint_model"))
   
   
-  parameters <- list(intercept = 0,
+  parameters <- list(intercept = -5,
                      slope = rep(0, nlayers(data$cov_rasters)),
                      iideffect = rep(0, length(overlap)),
                      iideffect_log_tau = 1,
@@ -90,7 +90,7 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
                      log_sigma = 0,
                      log_rho = 4,
                      nodemean = rep(0, n_s))
-
+  
   input_data <- list(x = cov_matrix, 
                      xpop = data$pop,
                      Apixel = Apix,
@@ -120,13 +120,12 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
   
   if(!use_points){
     fix <- list(iideffect_pr_log_tau = factor(NA), 
-                iideffect_pr = factor(rep(NA, nrow(data$pr))),
-                intercept = factor(NA))
+                iideffect_pr = factor(rep(NA, nrow(data$pr))))
     parameters$iideffect_pr_log_tau <- -100
   } else {
     fix <- list()
   }
-
+  
   obj <- MakeADFun(
     data = input_data, 
     parameters = parameters,
@@ -138,11 +137,11 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
   opt <- tryCatch({
     nlminb(obj$par, obj$fn, obj$gr, 
            control = list(iter.max = its, eval.max = 2*its, trace = 0))
-    },
-    error = function(e) {
-      cat('Error in model. Stopping')
-      return('error')
-    }
+  },
+  error = function(e) {
+    cat('Error in model. Stopping')
+    return('error')
+  }
   )
   
   # Rerun if needed.
@@ -152,11 +151,11 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
     opt <- tryCatch({
       nlminb(obj$par + rnorm(length(obj$par)), obj$fn, obj$gr, 
              control = list(iter.max = its, eval.max = 2*its, trace = 0))
-      },
-      error = function(e) {
-        cat('Error in model. Stopping')
-        return('error')
-      }
+    },
+    error = function(e) {
+      cat('Error in model. Stopping')
+      return('error')
+    }
     )
     
     # Soft check
@@ -165,7 +164,7 @@ fit_model <- function(data, mesh, its = 10, model.args = NULL, CI = 0.95, N = 10
     }  
     
   } 
-
+  
   cat("Optimisation has finished. Now moving onto sdreport.\n")
   
   sd_out <- sdreport(obj, getJointPrecision = TRUE)
@@ -200,15 +199,15 @@ predict_uncertainty <- function(pars, joint_pred, data, mesh, shapefile_ids, N, 
   
   # Extract the Amatrix and coords of the field
   field_properties <- extractFieldProperties(data, mesh)
-
+  
   # Initialise iid raster with values of polygon indices - rasterize is very slow, cannot be done each realisation
   # iid_ras <- raster(ncols = ncol(data$cov_rasters), nrows = nrow(data$cov_rasters), ext = extent(data$cov_rasters))
   # iid_ras <- rasterize(data$shapefiles, iid_ras, seq(1:nrow(data$polygon)))
-
+  
   # Get par draws
   ch <- Cholesky(joint_pred)
   par_draws <- sparseMVN::rmvn.sparse(N, pars, ch, prec = TRUE)
-                    
+  
   prevalence <- list()
   api <- list()
   
@@ -223,9 +222,9 @@ predict_uncertainty <- function(pars, joint_pred, data, mesh, shapefile_ids, N, 
     
     linear_pred_result <- makeLinearPredictor(p, data, field_ras, data$shapefile_raster, shapefile_ids)
     linear_pred <- linear_pred_result$linear_pred
-
+    
     linear_pred <- iidDraw(linear_pred, p, data$shapefile_raster, shapefile_ids)
-
+    
     prevalence[[r]] <- 1 / (1 + exp(-1 * linear_pred))
     
   }
@@ -254,19 +253,19 @@ predict_uncertainty <- function(pars, joint_pred, data, mesh, shapefile_ids, N, 
 
 
 iidDraw <- function(linear_pred, pars, shapefile_raster, shapefile_ids){
-
+  
   oos_shapefile_ids <- unique(shapefile_raster)
   #oos_shapefile_ids <- unique_shapefile_ids[!unique_shapefile_ids %in% shapefile_ids]
-
+  
   iid_samples <- rnorm(length(oos_shapefile_ids), 0, 1 / sqrt(exp(pars$iideffect_log_tau)))
   iid_ras <- shapefile_raster
   for(i in seq_along(iid_samples)) {
     iid_ras@data@values[which(shapefile_raster@data@values == oos_shapefile_ids[i])] <- iid_samples[i]
   }
   iid_ras[!shapefile_raster %in% oos_shapefile_ids & !is.na(iid_ras)] <- 0
-
+  
   linear_pred <- linear_pred + iid_ras
-
+  
   return(linear_pred)
 }
 
@@ -286,8 +285,8 @@ predict_model <- function(pars, data, mesh, shapefile_ids){
   # Extract field values
   field <- MakeField(field_properties$Amatrix, pars)
   field_ras <- rasterFromXYZ(cbind(field_properties$coords, field))
- 
-
+  
+  
   # Create linear predictor
   linear_pred_result <- makeLinearPredictor(pars, data, field_ras, data$shapefile_raster, shapefile_ids)
   linear_pred <- linear_pred_result$linear_pred
@@ -304,7 +303,7 @@ predict_model <- function(pars, data, mesh, shapefile_ids){
                       field = field_ras,
                       covariates = linear_pred_result$covariates,
                       iid = linear_pred_result$iid
-                      )
+  )
   class(predictions) <- c('ppj_preds', 'list')
   return(predictions)
 }
@@ -330,17 +329,15 @@ makeLinearPredictor <- function(pars, data, field_ras, shapefile_ras, shapefile_
   
   covs_by_betas <- list()
   for(i in seq_len(nlayers(data$cov_rasters))){
-    covs_by_betas[[i]] <- exp(pars$slope[i]) * data$cov_rasters[[i]]
+    covs_by_betas[[i]] <- pars$slope[i] * data$cov_rasters[[i]]
   }
-
-  if(!('intercept' %in% names(pars))) pars$intercept <- 0
   
   cov_by_betas <- stack(covs_by_betas)
   cov_contribution <- sum(cov_by_betas) + pars$intercept
   
   # Replace raster values with correct values from pars$iideffect
   # Need to make sure the indexing is correct!!!
-
+  
   iid_ras <- shapefile_ras
   for(i in seq_along(pars$iideffect)) {
     #iid_ras[iid_ras == i] <- pars$iideffect[i] # perhaps neater but below is faster. 
@@ -348,7 +345,7 @@ makeLinearPredictor <- function(pars, data, field_ras, shapefile_ras, shapefile_
   }
   iid_ras[!shapefile_ras %in% shapefile_ids & !is.na(iid_ras)] <- 0
   
-
+  
   linear_pred <- cov_contribution + field_ras #+ iid_ras
   
   return(list(linear_pred = linear_pred, 
@@ -358,7 +355,7 @@ makeLinearPredictor <- function(pars, data, field_ras, shapefile_ras, shapefile_
 
 
 cv_performance <- function(predictions, holdout, model_params, CI = 0.95, use_points, serial_extract = FALSE){
-
+  
   # Extract raster data
   rasters <- stack(predictions$pop, predictions$incidence_count)
   names(rasters) <- c('population', 'incidence_count')
@@ -381,23 +378,23 @@ cv_performance <- function(predictions, holdout, model_params, CI = 0.95, use_po
   # Calc pred incidence and API
   
   aggregated <- extracted %>% 
-                  na.omit %>% 
-                  group_by(area_id) %>% 
-                  summarise(pred_incidence_count = sum(incidence_count),
-                            pred_pop = sum(population),
-                            pred_api = 1000 * sum(incidence_count) / sum(population)) %>% 
-                  left_join(holdout$polygon, by = c('area_id' = 'shapefile_id')) %>% 
-                  mutate(incidence_count = response * population / 1000)
+    na.omit %>% 
+    group_by(area_id) %>% 
+    summarise(pred_incidence_count = sum(incidence_count),
+              pred_pop = sum(population),
+              pred_api = 1000 * sum(incidence_count) / sum(population)) %>% 
+    left_join(holdout$polygon, by = c('area_id' = 'shapefile_id')) %>% 
+    mutate(incidence_count = response * population / 1000)
   # Calc API metrics
   polygon_metrics <- aggregated %>% 
-                       summarise(RMSE = sqrt(mean((pred_api - response) ^ 2)),
-                                 MAE = mean(abs(pred_api - response)),
-                                 pearson = cor(pred_api, response, method = 'pearson'),
-                                 spearman = cor(pred_api, response, method = 'spearman'),
-                                 log_pearson = cor(log1p(pred_api), log1p(response), method = 'pearson'),
-                                 RMSE_cases = sqrt(mean((incidence_count - pred_incidence_count) ^ 2)),
-                                 MAE_cases = mean(abs(incidence_count - pred_incidence_count)),
-                                 total_cases = sum(incidence_count - pred_incidence_count))
+    summarise(RMSE = sqrt(mean((pred_api - response) ^ 2)),
+              MAE = mean(abs(pred_api - response)),
+              pearson = cor(pred_api, response, method = 'pearson'),
+              spearman = cor(pred_api, response, method = 'spearman'),
+              log_pearson = cor(log1p(pred_api), log1p(response), method = 'pearson'),
+              RMSE_cases = sqrt(mean((incidence_count - pred_incidence_count) ^ 2)),
+              MAE_cases = mean(abs(incidence_count - pred_incidence_count)),
+              total_cases = sum(incidence_count - pred_incidence_count))
   
   
   
@@ -441,7 +438,7 @@ cv_performance <- function(predictions, holdout, model_params, CI = 0.95, use_po
   
   #pred_incidence_count_noise <- sapply(aggregated_reals$pred_incidence_count, function(x) rpois(1, x))
   pred_incidence_count_noise <- rpois(rep(1, nrow(aggregated_reals)), aggregated_reals$pred_incidence_count)
-    #rpois(length(aggregated_reals$pred_incidence_count), aggregated_reals$pred_incidence_count)
+  #rpois(length(aggregated_reals$pred_incidence_count), aggregated_reals$pred_incidence_count)
   pred_api_noise <- 1000 * pred_incidence_count_noise / aggregated_reals$pred_pop
   
   aggregated_reals <- cbind(aggregated_reals, 
@@ -457,8 +454,8 @@ cv_performance <- function(predictions, holdout, model_params, CI = 0.95, use_po
     left_join(aggregated, by = c('area_id'))
   
   polygon_metrics_unc <- aggregated_reals %>% 
-                           mutate(inCI = response > pred_api_lower & response < pred_api_upper) %>% 
-                           summarise(coverage = mean(inCI))
+    mutate(inCI = response > pred_api_lower & response < pred_api_upper) %>% 
+    summarise(coverage = mean(inCI))
   
   
   polygon_metrics <- cbind(polygon_metrics, polygon_metrics_unc)
@@ -497,14 +494,14 @@ cv_performance <- function(predictions, holdout, model_params, CI = 0.95, use_po
   positive_reals_noise <- sapply(seq_len(nrow(pr_pred_obs)), 
                                  function(i) 
                                    rbinom(ncol(pr_reals_prev), pr_pred_obs$examined[i], pr_reals_prev[i, ])
-                                 )
+  )
   pr_reals_prev_noise <- t(positive_reals_noise) / pr_pred_obs$examined
   
   pr_conf <- apply(pr_reals_prev_noise, 1, function(x) quantile(x, probs = probs, na.rm = TRUE))
   
   pr_pred_obs <- cbind(pr_pred_obs, t(pr_conf))
   names(pr_pred_obs)[c(8, 9)] <- c('prevalence_lower',  'prevalence_upper')
-
+  
   pr_pred_obs <- na.omit(pr_pred_obs)
   
   pr_metrics <- pr_pred_obs %>% 

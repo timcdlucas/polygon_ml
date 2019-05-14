@@ -252,10 +252,11 @@ arg_list <- list(prior_rho_min = 1, #
                  prior_iideffect_pr_sd_prob = 0.0000001,
                  priormean_intercept = -2,
                  priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
-                 priormean_slope = -1.61, 
-                 priorsd_slope = 0.6, # Explains between 0.004 and 0.27 prevalence. 1 covariate shouldn't explain between 0 and 0.6 (range of prev).
+                 priormean_slope = 0, 
+                 priorsd_slope = 0.4, # Explains between 0.004 and 0.27 prevalence. 1 covariate shouldn't explain between 0 and 0.6 (range of prev).
                  use_polygons = use_polygons,
                  use_points = use_points)
+
 
 if(FALSE){
   full_model <- fit_model(data_mdg_cov, mesh_mdg, its = 1000, model.args = arg_list)
