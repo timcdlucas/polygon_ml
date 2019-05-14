@@ -39,6 +39,16 @@ ml_local_raster_paths <- c(
   'model_outputs/ml_pred_rasters/madagascar_mdg_ranger.tif'
 )
 
+
+ml_global_raster_paths <- c(
+  'model_outputs/ml_pred_rasters/global_mdg_enet.tif',
+  'model_outputs/ml_pred_rasters/global_mdg_xgbTree.tif',
+  'model_outputs/ml_pred_rasters/global_mdg_nnet.tif',
+  'model_outputs/ml_pred_rasters/global_mdg_ppr.tif',
+  'model_outputs/ml_pred_rasters/global_mdg_ranger.tif'
+)
+
+
 # load packages
 
 ## Spatial packages
@@ -124,10 +134,23 @@ data_ml_cov <- load_data(PR_path,
                          pr_country = 'country',
                          api_year = 2013)
 
+
+data_mlg_cov <- load_data(PR_path, 
+                          API_path, 
+                          pop_path, 
+                          ml_global_raster_paths, 
+                          shapefile_path, 
+                          shapefile_pattern = '.shp$', 
+                          useiso3 = 'MDG', 
+                          admin_unit_level = 'ADMIN3',
+                          pr_country = 'country',
+                          api_year = 2013)
+
+
 data_all_cov <- load_data(PR_path, 
                           API_path, 
                           pop_path, 
-                          c(cov_raster_paths, ml_local_raster_paths), 
+                          c(ml_global_raster_paths, ml_local_raster_paths), 
                           shapefile_path, 
                           shapefile_pattern = '.shp$', 
                           useiso3 = 'MDG', 
@@ -169,6 +192,22 @@ data_mdg_ml <- process_data(
   transform = NULL)
 save(data_mdg_ml, file = 'model_outputs/mdg_ml_data.RData')
 
+
+data_mdg_mlg <- process_data(
+  binomial_positive = data_mlg_cov$pr$positive,
+  binomial_n = data_mlg_cov$pr$examined,
+  coords = data_mlg_cov$pr[, c('longitude', 'latitude')],
+  polygon_response = data_mlg_cov$api$api_mean,
+  polygon_population = data_mlg_cov$api$population,
+  shapefile_id = data_mlg_cov$api$shapefile_id,
+  shps_id_column = 'area_id',
+  shapefiles = data_mlg_cov$shapefiles,
+  pop_raster = data_mlg_cov$pop,
+  cov_rasters = data_mlg_cov$covs,
+  useiso3 = 'MDG',
+  transform = NULL)
+save(data_mdg_mlg, file = 'model_outputs/mdg_mlg_data.RData')
+
 data_mdg_all <- process_data(
   binomial_positive = data_all_cov$pr$positive,
   binomial_n = data_all_cov$pr$examined,
@@ -181,7 +220,7 @@ data_mdg_all <- process_data(
   pop_raster = data_all_cov$pop,
   cov_rasters = data_all_cov$covs,
   useiso3 = 'MDG',
-  transform = c(4:7))
+  transform = NULL)
 
 save(data_mdg_all, file = 'model_outputs/mdg_all_data.RData')
 
@@ -204,6 +243,9 @@ data_cv1_mdg <- cv_random_folds(data_mdg_cov, k = 6)
 data_cv1_mdg_ml <- cv_random_folds(data_mdg_ml, k = 6, 
                                    polygon_folds = attr(data_cv1_mdg, 'polygon_folds'),
                                    pr_folds = attr(data_cv1_mdg, 'pr_folds'))
+data_cv1_mdg_mlg <- cv_random_folds(data_mdg_ml, k = 6, 
+                                   polygon_folds = attr(data_cv1_mdg, 'polygon_folds'),
+                                   pr_folds = attr(data_cv1_mdg, 'pr_folds'))
 data_cv1_mdg_all <- cv_random_folds(data_mdg_all, k = 6, 
                                     polygon_folds = attr(data_cv1_mdg, 'polygon_folds'),
                                     pr_folds = attr(data_cv1_mdg, 'pr_folds'))
@@ -219,6 +261,9 @@ save(data_cv1_mdg, file = 'model_outputs/mdg_cv_1.RData')
 # Spatial
 data_cv2_mdg <- cv_spatial_folds(data_mdg_cov, k = 3)
 data_cv2_mdg_ml <- cv_spatial_folds(data_mdg_ml, k = 3, 
+                                    polygon_folds = attr(data_cv2_mdg, 'polygon_folds'),
+                                    pr_folds = attr(data_cv2_mdg, 'pr_folds'))
+data_cv2_mdg_mlg <- cv_spatial_folds(data_mdg_mlg, k = 3, 
                                     polygon_folds = attr(data_cv2_mdg, 'polygon_folds'),
                                     pr_folds = attr(data_cv2_mdg, 'pr_folds'))
 data_cv2_mdg_all <- cv_spatial_folds(data_mdg_all, k = 3, 
@@ -373,7 +418,7 @@ if(FALSE){
 cat('Start cv1 model 1\n')
 
 cv1_output1 <- run_cv(data_cv1_mdg, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 3)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 6)
 obspred_map(data_cv1_mdg, cv1_output1, column = FALSE, mask = TRUE)
 ggsave('figs/mdg_covs_only_obspred_map.png')
 obspred_map(data_cv1_mdg, cv1_output1, trans = 'log10', column = FALSE, mask = TRUE)
@@ -387,7 +432,7 @@ save(cv1_output1, file = 'model_outputs/mdg_covs_cv_1.RData')
 cat('Start cv1 model 2\n')
 
 cv1_output2 <- run_cv(data_cv1_mdg_ml, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 1)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 6)
 obspred_map(data_cv1_mdg, cv1_output2, column = FALSE)
 ggsave('figs/mdg_ml_only_obspred_map.png')
 obspred_map(data_cv1_mdg, cv1_output2, trans = 'log10', column = FALSE)
@@ -401,7 +446,7 @@ save(cv1_output2, file = 'model_outputs/mdg_ml_cv_1.RData')
 cat('Start cv1 model 3\n')
 
 cv1_output3 <- run_cv(data_cv1_mdg_all, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 1)
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 6)
 obspred_map(data_cv1_mdg, cv1_output3, column = FALSE)
 ggsave('figs/mdg_all_obspred_map.png')
 obspred_map(data_cv1_mdg, cv1_output3, trans = 'log10', column = FALSE)
@@ -413,9 +458,26 @@ ggsave('figs/mdg_all_obspred_log.png')
 
 save(cv1_output3, file = 'model_outputs/mdg_all_cv_1.RData')
 
+
+cat('Start cv1 model 4\n')
+
+cv1_output4 <- run_cv(data_cv1_mdg_mlg, mesh_mdg, its = 1000, 
+                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 6)
+obspred_map(data_cv1_mdg, cv1_output4, column = FALSE)
+ggsave('figs/mdg_mlg_obspred_map.png')
+obspred_map(data_cv1_mdg, cv1_output4, trans = 'log10', column = FALSE)
+ggsave('figs/mdg_mlg_obspred_map_log.png')
+autoplot(cv1_output4, type = 'obs_preds', CI = FALSE)
+ggsave('figs/mdg_mlg_obspred.png')
+autoplot(cv1_output4, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/mdg_mlg_obspred_log.png')
+
+save(cv1_output3, file = 'model_outputs/mdg_mlg_cv_1.RData')
+
 cv1_output1$summary$polygon_metrics
 cv1_output2$summary$polygon_metrics
 cv1_output3$summary$polygon_metrics
+cv1_output4$summary$polygon_metrics
 
 cv1_output1$summary$pr_metrics
 cv1_output2$summary$pr_metrics
@@ -438,6 +500,7 @@ ggsave('figs/mdg_covs_only_obspred2.png')
 autoplot(cv2_output1, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_covs_only_obspred_log2.png')
 
+save(cv2_output1, file = 'model_outputs/mdg_covs_cv_2.RData')
 
 cat('Start cv2 model 2')
 
@@ -452,6 +515,7 @@ ggsave('figs/mdg_ml_only_obspred2.png')
 autoplot(cv2_output2, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_ml_only_obspred_log2.png')
 
+save(cv2_output2, file = 'model_outputs/mdg_ml_cv_2.RData')
 
 cat('Start cv2 model 3')
 
@@ -466,15 +530,31 @@ ggsave('figs/mdg_all_obspred2.png')
 autoplot(cv2_output3, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/mdg_all_only_obspred_log2.png')
 
-
-
-save(cv2_output1, file = 'model_outputs/mdg_covs_cv_2.RData')
-save(cv2_output2, file = 'model_outputs/mdg_ml_cv_2.RData')
 save(cv2_output3, file = 'model_outputs/mdg_all_cv_2.RData')
+
+
+
+
+cat('Start cv2 model 4')
+
+cv2_output4 <- run_cv(data_cv2_mdg_mlg, mesh_mdg, its = 1000, 
+                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 3)
+obspred_map(data_cv2_mdg, cv2_output4, column = FALSE, mask = TRUE)
+ggsave('figs/mdg_mlg_obspred_map2.png')
+obspred_map(data_cv2_mdg, cv2_output4, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/mdg_mlg_obspred_map_log2.png')
+autoplot(cv2_output4, type = 'obs_preds', CI = FALSE)
+ggsave('figs/mdg_mlg_obspred2.png')
+autoplot(cv2_output4, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/mdg_mlg_only_obspred_log2.png')
+
+save(cv2_output3, file = 'model_outputs/mdg_mlg_cv_2.RData')
+
 
 cv2_output1$summary$polygon_metrics
 cv2_output2$summary$polygon_metrics
 cv2_output3$summary$polygon_metrics
+cv2_output4$summary$polygon_metrics
 
 cv2_output1$summary$pr_metrics
 cv2_output2$summary$pr_metrics
