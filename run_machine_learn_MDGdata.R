@@ -169,64 +169,64 @@ tuneLength_vec <- c(10, 10, 10, 10, 10)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
 m[[1]] <- train(pr_extracted, y, 
-                     method = models[1],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[1],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[1],
-                     weights = pr_clean$examined)
-                     
+                method = models[1],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[1],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[1],
+                weights = pr_clean$examined)
+
 
 
 
 m[[2]] <- train(pr_extracted, y, 
-                     method = models[2],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[2],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[2])
-                     
+                method = models[2],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[2],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[2])
+
 
 
 
 
 
 m[[3]] <- train(pr_extracted, y, 
-                     method = models[3],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[3],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[3])
-                     
+                method = models[3],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[3],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[3])
+
 
 
 m[[4]] <- train(pr_extracted, y, 
-                     method = 'ppr',
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[4],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[4])
-                     
+                method = 'ppr',
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[4],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[4])
+
 
 
 m[[5]] <- train(pr_extracted, y, 
-                     method = 'nnet',
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[5],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[5],
-                     linout = TRUE)
-                     
+                method = 'nnet',
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[5],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[5],
+                linout = TRUE)
+
 
 
 png('figs/enetopt_mdg.png')
@@ -306,6 +306,35 @@ plot(pred_rast_mdg_inc)
 dev.off()
 
 
+
+# Now predict global models
+
+load('model_outputs/global_ml_global.RData')
+
+pred <- matrix(NA, nrow = nrow(covs_mdg_mat), ncol = length(m))
+
+
+pred[nas, ] <- predict(m, newdata = covs_mdg_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+
+
+pred_rast_mdg <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_mdg[pred_rast_mdg < 0] <- 0
+pred_rast_mdg_inc <- calc(pred_rast_mdg, qlogis)
+names(pred_rast_mdg_inc) <- sapply(m, function(x) x$method)
+
+projection(pred_rast_mdg_inc) <- projection(covs)
+
+writeRaster(pred_rast_mdg_inc, 
+            paste0('model_outputs/ml_pred_rasters/global_mdg_', sapply(m, function(x) x$method), '.tif'),
+            bylayer = TRUE,
+            format="GTiff", overwrite = TRUE, 
+            options = c('COMPRESS' = 'LZW'))
+
+
+
+png('figs/MDG_all_globalml.png', height = 1500, width = 1500)
+plot(pred_rast_mdg_inc)
+dev.off()
 
 
 

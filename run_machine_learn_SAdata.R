@@ -301,7 +301,7 @@ r.pts <- rasterToPoints(covs_crop_col, spatial = TRUE)
 
 pred_rast_col <- rasterFromXYZ(cbind(r.pts@coords, pred))
 pred_rast_col[pred_rast_col < 0] <- 0
-pred_rast_col_inc <- calc(pred_rast_col, PrevIncConversion)
+pred_rast_col_inc <- calc(pred_rast_col, qlogis)
 names(pred_rast_col_inc) <- sapply(m, function(x) x$method)
 
 
@@ -317,6 +317,38 @@ writeRaster(pred_rast_col_inc,
 
 
 png('figs/SA_all_ml.png', height = 1500, width = 1500)
+plot(pred_rast_col_inc)
+dev.off()
+
+
+
+
+# Now predict global models
+
+load('model_outputs/global_ml_global.RData')
+
+pred <- matrix(NA, nrow = nrow(covs_col_mat), ncol = length(m))
+
+
+pred[nas, ] <- predict(m, newdata = covs_col_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+
+
+pred_rast_col <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_col[pred_rast_col < 0] <- 0
+pred_rast_col_inc <- calc(pred_rast_col, qlogis)
+names(pred_rast_col_inc) <- sapply(m, function(x) x$method)
+
+projection(pred_rast_col_inc) <- projection(covs)
+
+writeRaster(pred_rast_col_inc, 
+            paste0('model_outputs/ml_pred_rasters/global_col_', sapply(m, function(x) x$method), '.tif'),
+            bylayer = TRUE,
+            format="GTiff", overwrite = TRUE, 
+            options = c('COMPRESS' = 'LZW'))
+
+
+
+png('figs/COL_all_globalml.png', height = 1500, width = 1500)
 plot(pred_rast_col_inc)
 dev.off()
 
