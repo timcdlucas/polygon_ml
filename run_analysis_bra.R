@@ -161,6 +161,7 @@ data_all_cov <- load_data(PR_path,
 
 # pre analysis
 
+tic()
 data_bra_cov <- process_data(
   binomial_positive = data$pr$positive,
   binomial_n = data$pr$examined,
@@ -176,6 +177,9 @@ data_bra_cov <- process_data(
   transform = c(4:7))
 
 save(data_bra_cov, file = 'model_outputs/bra_cov_data.RData')
+toc()
+
+
 
 data_bra_ml <- process_data(
   binomial_positive = data_ml_cov$pr$positive,
@@ -232,7 +236,7 @@ ggsave('figs/bra_input_data.png')
 
 
 
-mesh_bra <- build_mesh(data_bra_cov, mesh.args = list(max.edge = c(0.4, 4), cut = 0.4))
+mesh_bra <- build_mesh(data_bra_cov, mesh.args = list(max.edge = c(0.5, 4), cut = 0.5))
 autoplot(mesh_bra)
 save(mesh_bra, file = 'model_outputs/bra_mesh.RData')
 
@@ -304,22 +308,29 @@ arg_list <- list(prior_rho_min = 1, #
 
 
 if(FALSE){
+  tic()
   full_model <- fit_model(data_bra_cov, mesh_bra, its = 1000, model.args = arg_list)
+  toc()
+  
+  
+  save(full_model, file = 'model_outputs/full_model_covs_bra.RData')
+  
+  
   autoplot(full_model)
   
-  png('figs/full_model_covs_in_sample_map.png')
+  png('figs/bra_full_model_covs_in_sample_map.png')
   plot(full_model, layer = 'api')
   dev.off()
   
-  png('figs/full_model_covs_covariates_in_sample_map.png')
+  png('figs/bra_full_model_covs_covariates_in_sample_map.png')
   plot(full_model, layer = 'covariates')
   dev.off()
   
-  png('figs/full_model_covs_field_in_sample_map.png')
+  png('figs/bra_full_model_covs_field_in_sample_map.png')
   plot(full_model, layer = 'field')
   dev.off()
   
-  png('figs/full_model_covs_in_sample_map_log.png')
+  png('figs/bra_full_model_covs_in_sample_map_log.png')
   full_model$predictions$api %>% log10 %>% plot
   dev.off()
   
