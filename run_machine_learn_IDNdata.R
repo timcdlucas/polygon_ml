@@ -35,7 +35,6 @@ cov_raster_paths <- c(
 
 
 # load packages
-
 ## Spatial packages
 library(raster)
 library(maptools)
@@ -107,9 +106,9 @@ pr_min_year = 1990
 
 pr <- readr::read_csv(PR_path, guess_max  = 1e5)
 
-pr_region <- 'SouthEastAsia'
+pr_region <- 'country'
 if(pr_region == 'country'){
-  usecountries <- find_country_from_iso3(useiso3, api_full$iso3, api_full$country_name)
+  usecountries <- 'Indonesia'
 } else if(pr_region == 'SouthEastAsia'){
   usecountries <- c("Indonesia", "Papua New Guinea", "Malaysia", "Phillipines", "Thailand", "Laos", "Myanmar", "Cambodia", "Vietnam")
 } else if(pr_region == 'SouthAmerica'){
@@ -170,64 +169,63 @@ tuneLength_vec <- c(15, 15, 15, 15, 15)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
 m[[1]] <- train(pr_extracted, y, 
-                     method = models[1],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[1],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[1],
-                     weights = pr_clean$examined)
-                     
+                method = models[1],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[1],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[1],
+                weights = pr_clean$examined)
+
 
 
 
 m[[2]] <- train(pr_extracted, y, 
-                     method = models[2],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[2],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[2])
-                     
+                method = models[2],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[2],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[2])
+
 
 
 
 
 
 m[[3]] <- train(pr_extracted, y, 
-                     method = models[3],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[3],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[3])
-                     
+                method = models[3],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[3],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[3])
+
 
 
 m[[4]] <- train(pr_extracted, y, 
-                     method = 'ppr',
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[4],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[4])
-                     
+                method = 'ppr',
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[4],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[4])
+
 
 
 m[[5]] <- train(pr_extracted, y, 
-                     method = 'nnet',
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[5],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[5],
-                     linout = TRUE)
-                     
+                method = 'nnet',
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[5],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[5],
+                linout = TRUE)
 
 
 
@@ -247,7 +245,7 @@ ggsave('figs/enet_obspred_idn.png')
 
 p <- plotCV(m[[2]])
 p + xlim(0, NA)
-ggsave('figs/gbm_obspred_idn.png')
+ggsave('figs/xgboost_obspred_idn.png')
 
 p <- plotCV(m[[3]])
 p + xlim(0, NA)
@@ -257,26 +255,20 @@ p <- plotCV(m[[4]])
 p + xlim(0, NA)
 ggsave('figs/ppr_obspred_idn.png')
 
-p <- plotCV(m[[5]])
+p <- plotCV(m[[4]])
 p + xlim(0, NA)
 ggsave('figs/nnet_obspred_idn.png')
 
 compare_models(m[[1]], m[[2]])
-ggsave('figs/comp_enet_gbm_idn.png')
+ggsave('figs/comp_enet_xgb_idn.png')
 
 compare_models(m[[3]], m[[2]])
-ggsave('figs/comp_ranger_gbm_idn.png')
+ggsave('figs/comp_ranger_xgb_idn.png')
 
 compare_models(m[[4]], m[[2]])
-ggsave('figs/comp_ppr_gbm_idn.png')
+ggsave('figs/comp_ppr_xgb_idn.png')
 
-
-compare_models(m[[5]], m[[2]])
-ggsave('figs/comp_nnet_gbm_idn.png')
-
-save(m, file = 'model_outputs/south_east_asia_ml_idn.RData')
-
-
+save(m, file = 'model_outputs/indonesia_ml_idn.RData')
 
 
 
@@ -285,7 +277,7 @@ covs_crop_idn <- crop(covs, extent_idn)
 covs_idn_mat <- getValues(covs_crop_idn)
 
 pred <- matrix(NA, nrow = nrow(covs_idn_mat), ncol = length(m))
- 
+
 nas <- complete.cases(covs_idn_mat)
 
 
@@ -302,18 +294,53 @@ names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
 projection(pred_rast_idn_inc) <- projection(covs)
 
 writeRaster(pred_rast_idn_inc, 
-            paste0('model_outputs/ml_pred_rasters/south_asia_idn_', sapply(m, function(x) x$method), '.tif'),
+            paste0('model_outputs/ml_pred_rasters/indonesia_idn_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
             options = c('COMPRESS' = 'LZW'))
-            
 
 
-png('figs/IDN_all_ml.png', height = 1500, width = 1500)
+
+png('figs/idn_all_ml.png', height = 1500, width = 1500)
 plot(pred_rast_idn_inc)
 dev.off()
 
 
+
+# Now predict global models
+
+load('model_outputs/global_ml_global.RData')
+
+pred <- matrix(NA, nrow = nrow(covs_idn_mat), ncol = length(m))
+
+
+pred[nas, ] <- predict(m, newdata = covs_idn_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+
+
+pred_rast_idn <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_idn[pred_rast_idn < 0] <- 0
+pred_rast_idn_inc <- calc(pred_rast_idn, qlogis)
+names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
+
+projection(pred_rast_idn_inc) <- projection(covs)
+
+writeRaster(pred_rast_idn_inc, 
+            paste0('model_outputs/ml_pred_rasters/global_idn_', sapply(m, function(x) x$method), '.tif'),
+            bylayer = TRUE,
+            format="GTiff", overwrite = TRUE, 
+            options = c('COMPRESS' = 'LZW'))
+
+
+
+png('figs/idn_all_globalml.png', height = 1500, width = 1500)
+plot(pred_rast_idn_inc)
+dev.off()
+
+
+
+png('figs/idn_all_globalml_prev.png', height = 1500, width = 1500)
+plot(pred_rast_idn)
+dev.off()
 
 
 

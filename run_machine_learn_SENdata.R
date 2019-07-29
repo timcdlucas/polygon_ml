@@ -268,11 +268,11 @@ ggsave('figs/comp_ranger_xgb_sen.png')
 compare_models(m[[4]], m[[2]])
 ggsave('figs/comp_ppr_xgb_sen.png')
 
-save(m, file = 'model_outputs/madagascar_ml_sen.RData')
+save(m, file = 'model_outputs/senegal_ml_sen.RData')
 
 
 
-extent_sen <- c(35, 52, -30, -10)
+extent_sen <- c(-18, -11, 12, 17)
 covs_crop_sen <- crop(covs, extent_sen)
 covs_sen_mat <- getValues(covs_crop_sen)
 
@@ -337,6 +337,10 @@ plot(pred_rast_sen_inc)
 dev.off()
 
 
+
+png('figs/sen_all_globalml_prev.png', height = 1500, width = 1500)
+plot(pred_rast_sen)
+dev.off()
 
 
 

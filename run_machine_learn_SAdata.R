@@ -353,6 +353,9 @@ plot(pred_rast_col_inc)
 dev.off()
 
 
+png('figs/COL_all_globalml_prev.png', height = 1500, width = 1500)
+plot(pred_rast_col)
+dev.off()
 
 
 
