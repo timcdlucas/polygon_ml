@@ -43,7 +43,7 @@ ml_local_raster_paths <- c(
 
 ml_global_raster_paths <- c(
   'model_outputs/ml_pred_rasters/global_col_enet.tif',
-  'model_outputs/ml_pred_rasters/global_col_xgbTree.tif',
+  'model_outputs/ml_pred_rasters/global_col_gbm.tif',
   'model_outputs/ml_pred_rasters/global_col_nnet.tif',
   'model_outputs/ml_pred_rasters/global_col_ppr.tif',
   'model_outputs/ml_pred_rasters/global_col_ranger.tif'
