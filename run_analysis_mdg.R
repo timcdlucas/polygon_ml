@@ -366,10 +366,6 @@ in_sample_ml <- cv_performance(predictions = full_model_ml$predictions,
                                holdout = data_ml_cov,
                                model_params = full_model_ml$model, 
                                CI = 0.8,
-                               priormean_intercept = -2,
-                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
-                               priormean_intercept = -2,
-                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
                                use_points = use_points)
 autoplot(in_sample_ml, CI = TRUE)
 autoplot(in_sample_ml, trans = 'log1p', CI = TRUE)
@@ -403,10 +399,6 @@ in_sample_mlg <- cv_performance(predictions = full_model_mlg$predictions,
                                holdout = data_mlg_cov,
                                model_params = full_model_mlg$model, 
                                CI = 0.8,
-                               priormean_intercept = -2,
-                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
-                               priormean_intercept = -2,
-                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
                                use_points = use_points)
 autoplot(in_sample_mlg, CI = TRUE)
 autoplot(in_sample_mlg, trans = 'log1p', CI = TRUE)
