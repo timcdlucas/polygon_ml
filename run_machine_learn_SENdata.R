@@ -35,7 +35,6 @@ cov_raster_paths <- c(
 
 
 # load packages
-
 ## Spatial packages
 library(raster)
 library(maptools)
@@ -107,9 +106,11 @@ pr_min_year = 1990
 
 pr <- readr::read_csv(PR_path, guess_max  = 1e5)
 
-pr_region <- 'SouthAmerica'
+pr_region <- 'country'
 if(pr_region == 'country'){
-  usecountries <- find_country_from_iso3(useiso3, api_full$iso3, api_full$country_name)
+  usecountries <- 'Senegal'
+} else if(pr_region == 'SouthEastAsia'){
+  usecountries <- c("Indonesia", "Papua New Guinea", "Malaysia", "Phillipines", "Thailand", "Laos", "Myanmar", "Cambodia", "Vietnam")
 } else if(pr_region == 'SouthAmerica'){
   usecountries <- c("Colombia", "Brazil", "Venezuela", "Peru", "Suriname", "Bolivia")
 } else if(pr_region == 'all'){
@@ -140,9 +141,6 @@ if(!is.null(standardisePR)){
   } else {
     pr_clean$positive <- pr_clean$examined * prev_stand
   }
-  
-  pr_clean <- pr_clean %>% mutate(prevalence = positive / examined)
-  
 }  
 
 
@@ -171,155 +169,141 @@ tuneLength_vec <- c(15, 15, 15, 15, 15)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
 m[[1]] <- train(pr_extracted, y, 
-                     method = models[1],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[1],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[1],
-                     weights = pr_clean$examined)
-                     
+                method = models[1],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[1],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[1],
+                weights = pr_clean$examined)
+
 
 
 
 m[[2]] <- train(pr_extracted, y, 
-                     method = models[2],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[2],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[2])
-                     
+                method = models[2],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[2],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[2])
+
 
 
 
 
 
 m[[3]] <- train(pr_extracted, y, 
-                     method = models[3],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[3],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[3])
-                     
+                method = models[3],
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[3],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[3])
+
 
 
 m[[4]] <- train(pr_extracted, y, 
-                     method = models[4],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[4],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[4])
-                     
+                method = 'ppr',
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[4],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[4])
+
+
 
 m[[5]] <- train(pr_extracted, y, 
-                     method = models[5],
-                     trControl = trainControl(index = partition, 
-                                              returnData = TRUE,
-                                              savePredictions = TRUE, 
-                                              search = search_vec[5],
-                                              predictionBounds = c(0, 1)),
-                     tuneLength = tuneLength_vec[5],
-                     linout = TRUE)
-                     
+                method = 'nnet',
+                trControl = trainControl(index = partition, 
+                                         returnData = TRUE,
+                                         savePredictions = TRUE, 
+                                         search = search_vec[5],
+                                         predictionBounds = c(0, 1)),
+                tuneLength = tuneLength_vec[5],
+                linout = TRUE)
 
 
 
-
-
-png('figs/enetopt_sa.png')
+png('figs/enetopt_sen.png')
 print(plot(m[[1]]))
 dev.off()
 
-png('figs/ppropt_sa.png')
+png('figs/ppropt_sen.png')
 print(plot(m[[4]]))
-dev.off()
-
-png('figs/nnetopt_sa.png')
-print(plot(m[[5]]))
 dev.off()
 
 
 p <- plotCV(m[[1]])
 p + xlim(0, NA)
-ggsave('figs/enet_obspred_sa.png')
+ggsave('figs/enet_obspred_sen.png')
 
 
 p <- plotCV(m[[2]])
 p + xlim(0, NA)
-ggsave('figs/gbm_obspred_sa.png')
+ggsave('figs/xgboost_obspred_sen.png')
 
 p <- plotCV(m[[3]])
 p + xlim(0, NA)
-ggsave('figs/ranger_obspred_sa.png')
+ggsave('figs/ranger_obspred_sen.png')
 
 p <- plotCV(m[[4]])
 p + xlim(0, NA)
-ggsave('figs/ppr_obspred_sa.png')
+ggsave('figs/ppr_obspred_sen.png')
 
-
-
-p <- plotCV(m[[5]])
+p <- plotCV(m[[4]])
 p + xlim(0, NA)
-ggsave('figs/nnet_obspred_sa.png')
-
+ggsave('figs/nnet_obspred_sen.png')
 
 compare_models(m[[1]], m[[2]])
-ggsave('figs/comp_enet_gbm_sa.png')
+ggsave('figs/comp_enet_xgb_sen.png')
 
 compare_models(m[[3]], m[[2]])
-ggsave('figs/comp_ranger_gbm_sa.png')
+ggsave('figs/comp_ranger_xgb_sen.png')
 
 compare_models(m[[4]], m[[2]])
-ggsave('figs/comp_ppr_gbm_sa.png')
+ggsave('figs/comp_ppr_xgb_sen.png')
 
-compare_models(m[[5]], m[[2]])
-ggsave('figs/comp_nnet_gbm_sa.png')
-
-save(m, file = 'model_outputs/global_ml_sa.RData')
+save(m, file = 'model_outputs/madagascar_ml_sen.RData')
 
 
-extent_col <- c(-85, -60, -10, 20)
-covs_crop_col <- crop(covs, extent_col)
-covs_col_mat <- getValues(covs_crop_col)
 
-pred <- matrix(NA, nrow = nrow(covs_col_mat), ncol = length(m))
- 
-nas <- complete.cases(covs_col_mat)
+extent_sen <- c(35, 52, -30, -10)
+covs_crop_sen <- crop(covs, extent_sen)
+covs_sen_mat <- getValues(covs_crop_sen)
 
+pred <- matrix(NA, nrow = nrow(covs_sen_mat), ncol = length(m))
 
-pred[nas, ] <- predict(m, newdata = covs_col_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
-
-r.pts <- rasterToPoints(covs_crop_col, spatial = TRUE)
+nas <- complete.cases(covs_sen_mat)
 
 
-pred_rast_col <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_col[pred_rast_col < 0] <- 0
-pred_rast_col_inc <- calc(pred_rast_col, qlogis)
-names(pred_rast_col_inc) <- sapply(m, function(x) x$method)
+pred[nas, ] <- predict(m, newdata = covs_sen_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+
+r.pts <- rasterToPoints(covs_crop_sen, spatial = TRUE)
 
 
-projection(pred_rast_col_inc) <- projection(covs)
+pred_rast_sen <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_sen[pred_rast_sen < 0] <- 0
+pred_rast_sen_inc <- calc(pred_rast_sen, qlogis)
+names(pred_rast_sen_inc) <- sapply(m, function(x) x$method)
 
+projection(pred_rast_sen_inc) <- projection(covs)
 
-writeRaster(pred_rast_col_inc, 
-            paste0('model_outputs/ml_pred_rasters/sa_col_', sapply(m, function(x) x$method), '.tif'),
+writeRaster(pred_rast_sen_inc, 
+            paste0('model_outputs/ml_pred_rasters/senegal_sen_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
             options = c('COMPRESS' = 'LZW'))
-            
 
 
-png('figs/SA_all_ml.png', height = 1500, width = 1500)
-plot(pred_rast_col_inc)
+
+png('figs/sen_all_ml.png', height = 1500, width = 1500)
+plot(pred_rast_sen_inc)
 dev.off()
-
 
 
 
@@ -327,30 +311,31 @@ dev.off()
 
 load('model_outputs/global_ml_global.RData')
 
-pred <- matrix(NA, nrow = nrow(covs_col_mat), ncol = length(m))
+pred <- matrix(NA, nrow = nrow(covs_sen_mat), ncol = length(m))
 
 
-pred[nas, ] <- predict(m, newdata = covs_col_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
+pred[nas, ] <- predict(m, newdata = covs_sen_mat[nas, ], na.action = na.pass) %>% do.call(cbind, .)
 
 
-pred_rast_col <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_col[pred_rast_col < 0] <- 0
-pred_rast_col_inc <- calc(pred_rast_col, qlogis)
-names(pred_rast_col_inc) <- sapply(m, function(x) x$method)
+pred_rast_sen <- rasterFromXYZ(cbind(r.pts@coords, pred))
+pred_rast_sen[pred_rast_sen < 0] <- 0
+pred_rast_sen_inc <- calc(pred_rast_sen, qlogis)
+names(pred_rast_sen_inc) <- sapply(m, function(x) x$method)
 
-projection(pred_rast_col_inc) <- projection(covs)
+projection(pred_rast_sen_inc) <- projection(covs)
 
-writeRaster(pred_rast_col_inc, 
-            paste0('model_outputs/ml_pred_rasters/global_col_', sapply(m, function(x) x$method), '.tif'),
+writeRaster(pred_rast_sen_inc, 
+            paste0('model_outputs/ml_pred_rasters/global_sen_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
             options = c('COMPRESS' = 'LZW'))
 
 
 
-png('figs/COL_all_globalml.png', height = 1500, width = 1500)
-plot(pred_rast_col_inc)
+png('figs/sen_all_globalml.png', height = 1500, width = 1500)
+plot(pred_rast_sen_inc)
 dev.off()
+
 
 
 

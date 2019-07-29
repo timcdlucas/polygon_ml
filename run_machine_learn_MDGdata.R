@@ -28,7 +28,7 @@ cov_raster_paths <- c(
   Z('mastergrids/Other_Global_Covariates/Elevation/SRTM-Elevation/5km/Synoptic/SRTM_elevation.Synoptic.Overall.Data.5km.mean.tif'),
   Z('mastergrids/MODIS_Global/MOD11A2_v6_LST/LST_Day/5km/Synoptic/LST_Day_v6.Synoptic.Overall.SD.5km.mean.tif'),
   #Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCB/5km/Synoptic/TCB.Synoptic.Overall.mean.5km.mean.tif'),
-  Z('mastergrids/Other_Global_Covariates/NightTimeLights/VIIRS_DNB_Monthly/5km/Annual/VIIRS-SLC.2016.Annual.5km.MEDIAN.tif'),
+  Z('mastergrids/Other_Global_Covariates/NightTimeLights/VIIRS_DNB_Composites/5km/Annual/VIIRS-SLC.2016.Annual.mean.5km.median.tif'),
   #Z('mastergrids/Other_Global_Covariates/UrbanAreas/Global_Urban_Footprint/From_86m/5km/Global_Urban_Footprint_5km_PropUrban.tif'),
   Z('mastergrids/MODIS_Global/MCD43D6_v6_BRDF_Reflectance/TCW_v6/5km/Synoptic/TCW_v6.Synoptic.Overall.mean.5km.mean.tif')
 )
@@ -165,7 +165,7 @@ y <- pr_clean$prevalence
 partition <- createMultiFolds(y, k = 5, times = 1)
 
 models <- c('enet', 'gbm', 'ranger', 'ppr', 'nnet')
-tuneLength_vec <- c(10, 10, 10, 10, 10)
+tuneLength_vec <- c(15, 15, 15, 15, 15)
 search_vec <- c('grid', 'random', 'random', 'grid', 'grid')
 
 m[[1]] <- train(pr_extracted, y, 
