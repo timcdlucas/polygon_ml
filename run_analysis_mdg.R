@@ -18,6 +18,7 @@ PR_path <- Z('GBD2017/Processing/Stages/04b_PR_DB_Import_Export/Verified_Outputs
 API_path <- Z('GBD2017/Processing/Stages/04c_API_Data_Export/Checkpoint_Outputs/subnational.csv')
 pop_path <- Z('GBD2017/Processing/Stages/03_Muster_Population_Figures/Verified_Outputs/Output_Pop_At_Risk_Pf_5K/ihme_corrected_frankenpop_All_Ages_3_2015_at_risk_pf.tif')
 shapefile_path <- Z('master_geometries/Admin_Units/Global/GBD/GBD2017_MAP/GBD2017_MAP_MG_5K/')
+
 cov_raster_paths <- c(
   Z('mastergrids/MODIS_Global/MOD11A2_v6_LST/LST_Day/5km/Synoptic/LST_Day_v6.Synoptic.Overall.mean.5km.mean.tif'),
   Z('mastergrids/MODIS_Global/MCD43D6_v6_BRDF_Reflectance/EVI_v6/5km/Synoptic/EVI_v6.Synoptic.Overall.mean.5km.mean.tif'),
@@ -26,7 +27,7 @@ cov_raster_paths <- c(
   Z('mastergrids/Other_Global_Covariates/Elevation/SRTM-Elevation/5km/Synoptic/SRTM_elevation.Synoptic.Overall.Data.5km.mean.tif'),
   Z('mastergrids/MODIS_Global/MOD11A2_v6_LST/LST_Day/5km/Synoptic/LST_Day_v6.Synoptic.Overall.SD.5km.mean.tif'),
   #Z('mastergrids/MODIS_Global/MCD43B4_BRDF_Reflectance/TCB/5km/Synoptic/TCB.Synoptic.Overall.mean.5km.mean.tif'),
-  Z('mastergrids/Other_Global_Covariates/NightTimeLights/VIIRS_DNB_Monthly/5km/Annual/VIIRS-SLC.2016.Annual.5km.MEDIAN.tif'),
+  Z('mastergrids/Other_Global_Covariates/NightTimeLights/VIIRS_DNB_Composites/5km/Annual/VIIRS-SLC.2016.Annual.mean.5km.median.tif'),
   #Z('mastergrids/Other_Global_Covariates/UrbanAreas/Global_Urban_Footprint/From_86m/5km/Global_Urban_Footprint_5km_PropUrban.tif'),
   Z('mastergrids/MODIS_Global/MCD43D6_v6_BRDF_Reflectance/TCW_v6/5km/Synoptic/TCW_v6.Synoptic.Overall.mean.5km.mean.tif')
 )
@@ -173,7 +174,8 @@ data_mdg_cov <- process_data(
   pop_raster = data$pop,
   cov_rasters = data$covs,
   useiso3 = 'MDG',
-  transform = c(4:7))
+  transform = c(4:7),
+  scale_rasters = TRUE)
 
 save(data_mdg_cov, file = 'model_outputs/mdg_cov_data.RData')
 
@@ -303,115 +305,152 @@ arg_list <- list(prior_rho_min = 1, #
                  use_points = use_points)
 
 
-if(FALSE){
-  full_model <- fit_model(data_mdg_cov, mesh_mdg, its = 1000, model.args = arg_list)
-  autoplot(full_model)
-  
-  png('figs/full_model_covs_in_sample_map.png')
-  plot(full_model, layer = 'api')
-  dev.off()
-  
-  png('figs/full_model_covs_covariates_in_sample_map.png')
-  plot(full_model, layer = 'covariates')
-  dev.off()
-  
-  png('figs/full_model_covs_field_in_sample_map.png')
-  plot(full_model, layer = 'field')
-  dev.off()
-  
-  png('figs/full_model_covs_in_sample_map_log.png')
-  full_model$predictions$api %>% log10 %>% plot
-  dev.off()
-  
-  
-  
-  in_sample <- cv_performance(predictions = full_model$predictions, 
-                              holdout = data_mdg_cov,
-                              model_params = full_model$model, 
-                              CI = 0.8,
-                              use_points = use_points)
-  autoplot(in_sample, CI = TRUE)
-  autoplot(in_sample, trans = 'log1p', CI = TRUE)
-  ggsave('figs/mdg_full_model_covs_in_sample.png')
-  
-  save(full_model, file = 'model_outputs/full_model_covs_mdg.RData')
-  
-  
-  
-  
-  full_model_ml <- fit_model(data_mdg_ml, mesh_mdg, its = 1000, model.args = arg_list)
-  autoplot(full_model_ml)
-  
-  png('figs/full_model_ml_in_sample_map.png')
-  plot(full_model_ml, layer = 'api')
-  dev.off()
-  
-  png('figs/full_model_ml_covariates_in_sample_map.png')
-  plot(full_model_ml, layer = 'covariates')
-  dev.off()
-  
-  png('figs/full_model_ml_field_in_sample_map.png')
-  plot(full_model_ml, layer = 'field')
-  dev.off()
-  
-  png('figs/full_model_ml_in_sample_map_log.png')
-  full_model_ml$predictions$api %>% log10 %>% plot
-  dev.off()
-  
-  
-  
-  in_sample_ml <- cv_performance(predictions = full_model_ml$predictions, 
-                                 holdout = data_ml_cov,
-                                 model_params = full_model_ml$model, 
-                                 CI = 0.8,
-                                 priormean_intercept = -2,
-                                 priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
-                                 priormean_intercept = -2,
-                                 priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
-                                 use_points = use_points)
-  autoplot(in_sample_ml, CI = TRUE)
-  autoplot(in_sample_ml, trans = 'log1p', CI = TRUE)
-  ggsave('figs/mdg_full_model_ml_in_sample.png')
-  
-  save(full_model_ml, file = 'model_outputs/full_model_ml_mdg.RData')
-  
-  
-  
-  
-  
-  full_model_all <- fit_model(data_mdg_all, mesh_mdg, its = 1000, model.args = arg_list)
-  autoplot(full_model_all)
-  
-  png('figs/full_model_all_in_sample_map.png')
-  plot(full_model_all, layer = 'api')
-  dev.off()
-  
-  png('figs/full_model_all_in_sample_map_log.png')
-  full_model_all$predictions$api %>% log10 %>% plot
-  dev.off()
-  
-  
-  png('figs/full_model_all_covariates_in_sample_map.png')
-  plot(full_model_all, layer = 'covariates')
-  dev.off()
-  
-  png('figs/full_mode_alll_field_in_sample_map.png')
-  plot(full_model_all, layer = 'field')
-  dev.off()
-  
-  in_sample_all <- cv_performance(predictions = full_model_all$predictions, 
-                                  holdout = data_mdg_all,
-                                  model_params = full_model_all$model, 
-                                  CI = 0.8,
-                                  use_points = use_points)
-  autoplot(in_sample_all, CI = TRUE)
-  autoplot(in_sample_all, trans = 'log1p', CI = TRUE)
-  ggsave('figs/mdg_full_model_all_in_sample.png')
-  
-  save(in_sample_all, file = 'model_outputs/full_model_all_mdg_all.RData')
-  
-  
-}
+
+full_model <- fit_model(data_mdg_cov, mesh_mdg, its = 1000, model.args = arg_list)
+autoplot(full_model)
+
+png('figs/full_model_covs_in_sample_map.png')
+plot(full_model, layer = 'api')
+dev.off()
+
+png('figs/full_model_covs_covariates_in_sample_map.png')
+plot(full_model, layer = 'covariates')
+dev.off()
+
+png('figs/full_model_covs_field_in_sample_map.png')
+plot(full_model, layer = 'field')
+dev.off()
+
+png('figs/full_model_covs_in_sample_map_log.png')
+full_model$predictions$api %>% log10 %>% plot
+dev.off()
+
+
+
+in_sample <- cv_performance(predictions = full_model$predictions, 
+                            holdout = data_mdg_cov,
+                            model_params = full_model$model, 
+                            CI = 0.8,
+                            use_points = use_points)
+autoplot(in_sample, CI = TRUE)
+autoplot(in_sample, trans = 'log1p', CI = TRUE)
+ggsave('figs/mdg_full_model_covs_in_sample.png')
+
+save(full_model, file = 'model_outputs/full_model_covs_mdg.RData')
+
+
+
+
+full_model_ml <- fit_model(data_mdg_ml, mesh_mdg, its = 1000, model.args = arg_list)
+autoplot(full_model_ml)
+
+png('figs/full_model_ml_in_sample_map.png')
+plot(full_model_ml, layer = 'api')
+dev.off()
+
+png('figs/full_model_ml_covariates_in_sample_map.png')
+plot(full_model_ml, layer = 'covariates')
+dev.off()
+
+png('figs/full_model_ml_field_in_sample_map.png')
+plot(full_model_ml, layer = 'field')
+dev.off()
+
+png('figs/full_model_ml_in_sample_map_log.png')
+full_model_ml$predictions$api %>% log10 %>% plot
+dev.off()
+
+
+
+in_sample_ml <- cv_performance(predictions = full_model_ml$predictions, 
+                               holdout = data_ml_cov,
+                               model_params = full_model_ml$model, 
+                               CI = 0.8,
+                               priormean_intercept = -2,
+                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
+                               priormean_intercept = -2,
+                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
+                               use_points = use_points)
+autoplot(in_sample_ml, CI = TRUE)
+autoplot(in_sample_ml, trans = 'log1p', CI = TRUE)
+ggsave('figs/mdg_full_model_ml_in_sample.png')
+
+save(full_model_ml, file = 'model_outputs/full_model_ml_mdg.RData')
+
+
+full_model_mlg <- fit_model(data_mdg_mlg, mesh_mdg, its = 1000, model.args = arg_list)
+autoplot(full_model_mlg)
+
+png('figs/full_model_mlg_in_sample_map.png')
+plot(full_model_mlg, layer = 'api')
+dev.off()
+
+png('figs/full_model_mlg_covariates_in_sample_map.png')
+plot(full_model_mlg, layer = 'covariates')
+dev.off()
+
+png('figs/full_model_mlg_field_in_sample_map.png')
+plot(full_model_mlg, layer = 'field')
+dev.off()
+
+png('figs/full_model_mlg_in_sample_map_log.png')
+full_model_mlg$predictions$api %>% log10 %>% plot
+dev.off()
+
+
+
+in_sample_mlg <- cv_performance(predictions = full_model_mlg$predictions, 
+                               holdout = data_mlg_cov,
+                               model_params = full_model_mlg$model, 
+                               CI = 0.8,
+                               priormean_intercept = -2,
+                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
+                               priormean_intercept = -2,
+                               priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
+                               use_points = use_points)
+autoplot(in_sample_mlg, CI = TRUE)
+autoplot(in_sample_mlg, trans = 'log1p', CI = TRUE)
+ggsave('figs/mdg_full_model_mlg_in_sample.png')
+
+save(full_model_mlg, file = 'model_outputs/full_model_mlg_mdg.RData')
+
+
+
+
+
+full_model_all <- fit_model(data_mdg_all, mesh_mdg, its = 1000, model.args = arg_list)
+autoplot(full_model_all)
+
+png('figs/full_model_all_in_sample_map.png')
+plot(full_model_all, layer = 'api')
+dev.off()
+
+png('figs/full_model_all_in_sample_map_log.png')
+full_model_all$predictions$api %>% log10 %>% plot
+dev.off()
+
+
+png('figs/full_model_all_covariates_in_sample_map.png')
+plot(full_model_all, layer = 'covariates')
+dev.off()
+
+png('figs/full_mode_alll_field_in_sample_map.png')
+plot(full_model_all, layer = 'field')
+dev.off()
+
+in_sample_all <- cv_performance(predictions = full_model_all$predictions, 
+                                holdout = data_mdg_all,
+                                model_params = full_model_all$model, 
+                                CI = 0.8,
+                                use_points = use_points)
+autoplot(in_sample_all, CI = TRUE)
+autoplot(in_sample_all, trans = 'log1p', CI = TRUE)
+ggsave('figs/mdg_full_model_all_in_sample.png')
+
+save(in_sample_all, file = 'model_outputs/full_model_all_mdg_all.RData')
+
+
+
 
 
 # Run 3 x models on cv1.
