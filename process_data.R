@@ -11,6 +11,7 @@ process_data <- function(binomial_positive,
                          pop_raster,
                          cov_rasters,
                          useiso3,
+                         scale_rasters = FALSE,
                          na.rm = FALSE,
                          transform = NULL,
                          skip_extract = FALSE,
@@ -97,8 +98,11 @@ process_data <- function(binomial_positive,
   
   # Scale rasters
   cov_rasters <- transform_rasters(cov_rasters, transform)
-  cov_rasters <- scale(cov_rasters)
-  
+
+  if(scale_rasters){
+    cov_rasters <- scale(cov_rasters)
+  }
+
   plot_raster_histograms(cov_rasters)
   
   # Extract covariates
