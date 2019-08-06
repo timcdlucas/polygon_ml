@@ -245,7 +245,7 @@ data_cv1_col <- cv_random_folds(data_col_cov, k = 6)
 data_cv1_col_ml <- cv_random_folds(data_col_ml, k = 6, 
                                    polygon_folds = attr(data_cv1_col, 'polygon_folds'),
                                    pr_folds = attr(data_cv1_col, 'pr_folds'))
-data_cv1_col_mlg <- cv_random_folds(data_col_ml, k = 6, 
+data_cv1_col_mlg <- cv_random_folds(data_col_mlg, k = 6, 
                                    polygon_folds = attr(data_cv1_col, 'polygon_folds'),
                                    pr_folds = attr(data_cv1_col, 'pr_folds'))
 data_cv1_col_all <- cv_random_folds(data_col_all, k = 6, 
@@ -503,7 +503,7 @@ ggsave('figs/col_mlg_obspred.png')
 autoplot(cv1_output4, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/col_mlg_obspred_log.png')
 
-save(cv1_output3, file = 'model_outputs/col_mlg_cv_1.RData')
+save(cv1_output4, file = 'model_outputs/col_mlg_cv_1.RData')
 
 cv1_output1$summary$polygon_metrics
 cv1_output2$summary$polygon_metrics
@@ -579,7 +579,7 @@ ggsave('figs/col_mlg_obspred2.png')
 autoplot(cv2_output4, type = 'obs_preds', CI = FALSE, tran = 'log1p')
 ggsave('figs/col_mlg_only_obspred_log2.png')
 
-save(cv2_output3, file = 'model_outputs/col_mlg_cv_2.RData')
+save(cv2_output4, file = 'model_outputs/col_mlg_cv_2.RData')
 
 
 cv2_output1$summary$polygon_metrics
