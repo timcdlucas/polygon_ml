@@ -59,7 +59,7 @@ parallelExtract <- function(raster, shape, fun = mean, id = 'OBJECTID',  ...){
   # Run extract in parallel.
   values <- foreach::foreach(i = seq_along(shape)) %dopar% {  
     raster::extract(raster, shape[i, ], fun = fun, na.rm = TRUE, cellnumbers = TRUE, ...)
-  } 
+  }   
   if(!is.null(fun)){
     # If a summary function was given, just bind everything together and add ID column
     df <- data.frame(do.call(rbind, values))
