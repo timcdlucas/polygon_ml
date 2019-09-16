@@ -287,11 +287,29 @@ r.pts <- rasterToPoints(covs_crop_sen, spatial = TRUE)
 
 
 pred_rast_sen <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_sen[pred_rast_sen < 0] <- 0
-pred_rast_sen_inc <- calc(pred_rast_sen, qlogis)
+
+#find min
+v <- getValues(pred_rast_sen)
+min <- min(v[v > 0], na.rm = TRUE)
+
+empLogit <- function(x, eps = 1e-3) log((eps + x)/(1 - x+eps))
+eps <- 1e-1
+
+pred_rast_sen[pred_rast_sen <= 0] <- min
+pred_rast_sen_inc <- calc(pred_rast_sen, empLogit)
 names(pred_rast_sen_inc) <- sapply(m, function(x) x$method)
 
+projection(pred_rast_sen) <- projection(covs)
 projection(pred_rast_sen_inc) <- projection(covs)
+
+# This is current. Just seeing if scaling is the issue.
+#writeRaster(pred_rast_sen, 
+#            paste0('model_outputs/ml_pred_rasters/senegal_sen_', sapply(m, function(x) x$method), '.tif'),
+#            bylayer = TRUE,
+#            format="GTiff", overwrite = TRUE, 
+#            options = c('COMPRESS' = 'LZW'))
+
+
 
 writeRaster(pred_rast_sen_inc, 
             paste0('model_outputs/ml_pred_rasters/senegal_sen_', sapply(m, function(x) x$method), '.tif'),
@@ -318,8 +336,13 @@ pred[nas, ] <- predict(m, newdata = covs_sen_mat[nas, ], na.action = na.pass) %>
 
 
 pred_rast_sen <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_sen[pred_rast_sen < 0] <- 0
-pred_rast_sen_inc <- calc(pred_rast_sen, qlogis)
+
+#find min
+v <- getValues(pred_rast_sen)
+min <- min(v[v > 0], na.rm = TRUE)
+
+pred_rast_sen[pred_rast_sen <= 0] <- min
+pred_rast_sen_inc <- calc(pred_rast_sen, empLogit)
 names(pred_rast_sen_inc) <- sapply(m, function(x) x$method)
 
 projection(pred_rast_sen_inc) <- projection(covs)
