@@ -311,7 +311,7 @@ projection(pred_rast_sen_inc) <- projection(covs)
 
 
 
-writeRaster(pred_rast_sen_inc, 
+writeRaster(pred_rast_sen, 
             paste0('model_outputs/ml_pred_rasters/senegal_sen_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
@@ -345,9 +345,10 @@ pred_rast_sen[pred_rast_sen <= 0] <- min
 pred_rast_sen_inc <- calc(pred_rast_sen, empLogit)
 names(pred_rast_sen_inc) <- sapply(m, function(x) x$method)
 
+projection(pred_rast_sen) <- projection(covs)
 projection(pred_rast_sen_inc) <- projection(covs)
 
-writeRaster(pred_rast_sen_inc, 
+writeRaster(pred_rast_sen, 
             paste0('model_outputs/ml_pred_rasters/global_sen_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 

@@ -362,7 +362,7 @@ cv_performance <- function(predictions, holdout, model_params, CI = 0.95, use_po
   
   if(serial_extract){
     extracted <- raster::extract(rasters, holdout$shapefiles, cellnumbers = TRUE, df = TRUE)
-    extracted[, 1] <- shapefiles$area_id[extracted[, 1]]
+    extracted[, 1] <- holdout$shapefiles$area_id[extracted[, 1]]
     names(extracted)[1] <- 'area_id'
   } else {
     cl <- makeCluster(min(detectCores() - 1, 20))

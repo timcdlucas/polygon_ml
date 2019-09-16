@@ -287,13 +287,18 @@ r.pts <- rasterToPoints(covs_crop_mdg, spatial = TRUE)
 
 
 pred_rast_mdg <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_mdg[pred_rast_mdg < 0] <- 0
+#find min
+v <- getValues(pred_rast_mdg)
+min <- min(v[v > 0], na.rm = TRUE)
+
+pred_rast_mdg[pred_rast_mdg <= 0] <- min
 pred_rast_mdg_inc <- calc(pred_rast_mdg, qlogis)
 names(pred_rast_mdg_inc) <- sapply(m, function(x) x$method)
 
+projection(pred_rast_mdg) <- projection(covs)
 projection(pred_rast_mdg_inc) <- projection(covs)
 
-writeRaster(pred_rast_mdg_inc, 
+writeRaster(pred_rast_mdg, 
             paste0('model_outputs/ml_pred_rasters/madagascar_mdg_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
@@ -318,13 +323,18 @@ pred[nas, ] <- predict(m, newdata = covs_mdg_mat[nas, ], na.action = na.pass) %>
 
 
 pred_rast_mdg <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_mdg[pred_rast_mdg < 0] <- 0
+#find min
+v <- getValues(pred_rast_mdg)
+min <- min(v[v > 0], na.rm = TRUE)
+
+pred_rast_mdg[pred_rast_mdg <= 0] <- min
 pred_rast_mdg_inc <- calc(pred_rast_mdg, qlogis)
 names(pred_rast_mdg_inc) <- sapply(m, function(x) x$method)
 
+projection(pred_rast_mdg) <- projection(covs)
 projection(pred_rast_mdg_inc) <- projection(covs)
 
-writeRaster(pred_rast_mdg_inc, 
+writeRaster(pred_rast_mdg, 
             paste0('model_outputs/ml_pred_rasters/global_mdg_', sapply(m, function(x) x$method), '.tif'),
             bylayer = TRUE,
             format="GTiff", overwrite = TRUE, 
