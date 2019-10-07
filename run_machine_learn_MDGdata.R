@@ -291,8 +291,10 @@ pred_rast_mdg <- rasterFromXYZ(cbind(r.pts@coords, pred))
 v <- getValues(pred_rast_mdg)
 min <- min(v[v > 0], na.rm = TRUE)
 
+empLogit <- function(x, eps = 1e-1) log((eps + x)/(1 - x+eps))
+
 pred_rast_mdg[pred_rast_mdg <= 0] <- min
-pred_rast_mdg_inc <- calc(pred_rast_mdg, qlogis)
+pred_rast_mdg_inc <- calc(pred_rast_mdg, empLogit)
 names(pred_rast_mdg_inc) <- sapply(m, function(x) x$method)
 
 projection(pred_rast_mdg) <- projection(covs)
@@ -328,7 +330,7 @@ v <- getValues(pred_rast_mdg)
 min <- min(v[v > 0], na.rm = TRUE)
 
 pred_rast_mdg[pred_rast_mdg <= 0] <- min
-pred_rast_mdg_inc <- calc(pred_rast_mdg, qlogis)
+pred_rast_mdg_inc <- calc(pred_rast_mdg, empLogit)
 names(pred_rast_mdg_inc) <- sapply(m, function(x) x$method)
 
 projection(pred_rast_mdg) <- projection(covs)

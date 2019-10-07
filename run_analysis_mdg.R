@@ -324,7 +324,7 @@ arg_list2 <- list(prior_rho_min = 1, #
                  use_points = use_points)
 
 
-arg_list1 <- list(prior_rho_min = 1, # 
+arg_list3 <- list(prior_rho_min = 1, # 
                  prior_rho_prob = 0.0001, # Want p(rho < 3) = 0.0001
                  prior_sigma_max = 1, # Want p(sd > 1) = 0.0001 (would explain most of prev). 
                  prior_sigma_prob = 0.0001,
@@ -557,8 +557,8 @@ cv1_output3$summary$pr_metrics
 # Run 3 x models on cv2.
 cat('Start cv2 model 1')
 
-cv2_output1 <- run_cv(data_cv2_mdg1, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 3)
+cv2_output1 <- run_cv(data_cv2_mdg, mesh_mdg, its = 1000, 
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 40, cores = 3)
 obspred_map(data_cv2_mdg, cv2_output1, column = FALSE, mask = TRUE)
 ggsave('figs/mdg_covs_only_obspred_map2.png')
 obspred_map(data_cv2_mdg, cv2_output1, trans = 'log10', column = FALSE, mask = TRUE)
@@ -572,8 +572,8 @@ save(cv2_output1, file = 'model_outputs/mdg_covs_cv_2.RData')
 
 cat('Start cv2 model 2')
 
-cv2_output2 <- run_cv(data_cv2_mdg_ml2, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 30, cores = 3)
+cv2_output2 <- run_cv(data_cv2_mdg_ml, mesh_mdg, its = 1000, 
+                      model.args = arg_list2, CI = 0.8, parallel_delay = 30, cores = 3)
 obspred_map(data_cv2_mdg, cv2_output2, column = FALSE, mask = TRUE)
 ggsave('figs/mdg_ml_only_obspred_map2.png')
 obspred_map(data_cv2_mdg, cv2_output2, trans = 'log10', column = FALSE, mask = TRUE)
@@ -587,8 +587,8 @@ save(cv2_output2, file = 'model_outputs/mdg_ml_cv_2.RData')
 
 cat('Start cv2 model 3')
 
-cv2_output3 <- run_cv(data_cv2_mdg_all3, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 3)
+cv2_output3 <- run_cv(data_cv2_mdg_all, mesh_mdg, its = 1000, 
+                      model.args = arg_list3, CI = 0.8, parallel_delay = 0, cores = 3)
 obspred_map(data_cv2_mdg, cv2_output3, column = FALSE, mask = TRUE)
 ggsave('figs/mdg_all_obspred_map2.png')
 obspred_map(data_cv2_mdg, cv2_output3, trans = 'log10', column = FALSE, mask = TRUE)
@@ -605,8 +605,8 @@ save(cv2_output3, file = 'model_outputs/mdg_all_cv_2.RData')
 
 cat('Start cv2 model 4')
 
-cv2_output4 <- run_cv(data_cv2_mdg_mlg2, mesh_mdg, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 3)
+cv2_output4 <- run_cv(data_cv2_mdg_mlg, mesh_mdg, its = 1000, 
+                      model.args = arg_list2, CI = 0.8, parallel_delay = 0, cores = 3)
 obspred_map(data_cv2_mdg, cv2_output4, column = FALSE, mask = TRUE)
 ggsave('figs/mdg_mlg_obspred_map2.png')
 obspred_map(data_cv2_mdg, cv2_output4, trans = 'log10', column = FALSE, mask = TRUE)

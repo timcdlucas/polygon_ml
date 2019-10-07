@@ -287,10 +287,17 @@ r.pts <- rasterToPoints(covs_crop_idn, spatial = TRUE)
 
 
 pred_rast_idn <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_idn[pred_rast_idn < 0] <- 0
-pred_rast_idn_inc <- calc(pred_rast_idn, qlogis)
-names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
 
+#find min
+v <- getValues(pred_rast_sen)
+min <- min(v[v > 0], na.rm = TRUE)
+
+empLogit <- function(x, eps = 1e-1) log((eps + x)/(1 - x+eps))
+
+
+pred_rast_idn[pred_rast_idn <= 0] <- min
+pred_rast_idn_inc <- calc(pred_rast_idn, empLogit)
+names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
 projection(pred_rast_idn_inc) <- projection(covs)
 
 writeRaster(pred_rast_idn_inc, 
@@ -318,11 +325,17 @@ pred[nas, ] <- predict(m, newdata = covs_idn_mat[nas, ], na.action = na.pass) %>
 
 
 pred_rast_idn <- rasterFromXYZ(cbind(r.pts@coords, pred))
-pred_rast_idn[pred_rast_idn < 0] <- 0
-pred_rast_idn_inc <- calc(pred_rast_idn, qlogis)
+
+#find min
+v <- getValues(pred_rast_idn)
+min <- min(v[v > 0], na.rm = TRUE)
+
+pred_rast_idn[pred_rast_idn <= 0] <- min
+pred_rast_idn_inc <- calc(pred_rast_idn, empLogit)
 names(pred_rast_idn_inc) <- sapply(m, function(x) x$method)
 
 projection(pred_rast_idn_inc) <- projection(covs)
+
 
 writeRaster(pred_rast_idn_inc, 
             paste0('model_outputs/ml_pred_rasters/global_idn_', sapply(m, function(x) x$method), '.tif'),
