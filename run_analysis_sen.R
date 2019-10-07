@@ -677,7 +677,7 @@ cv2_output3$summary$pr_metrics
 cat('Start cv1 model 5\n')
 
 cv1_output5 <- run_cv(data_cv1_sen_mle, mesh_sen, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 6)
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 20, cores = 6)
 obspred_map(data_cv1_sen, cv1_output5, column = FALSE)
 ggsave('figs/sen_mle_obspred_map.png')
 obspred_map(data_cv1_sen, cv1_output5, trans = 'log10', column = FALSE)
@@ -692,8 +692,8 @@ save(cv1_output5, file = 'model_outputs/sen_mle_cv_1.RData')
 
 cat('Start cv2 model 5')
 
-cv2_output5 <- run_cv(data_cv2_sen_ml3, mesh_sen, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 7)
+cv2_output5 <- run_cv(data_cv2_sen_mle, mesh_sen, its = 1000, 
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 0, cores = 7)
 obspred_map(data_cv2_sen, cv2_output5, column = FALSE, mask = TRUE)
 ggsave('figs/sen_mle_obspred_map2.png')
 obspred_map(data_cv2_sen, cv2_output5, trans = 'log10', column = FALSE, mask = TRUE)
