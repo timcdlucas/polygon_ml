@@ -264,58 +264,73 @@ cv2_mlg_idn <- get(load(cv2_mlg_idn_path))
 cv1_df_mdg <- rbind(cv1_covs_mdg$summary$combined_aggregated %>% mutate(model = 'Envir'),
                     cv1_ml_mdg$summary$combined_aggregated %>% mutate(model = 'MLl'),
                     cv1_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLg'),
-                    cv1_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
-                    cv1_all_mdg$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                    cv1_all_mdg$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv1_mle_mdg$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Madagascar')
 
 cv2_df_mdg <- rbind(cv2_covs_mdg$summary$combined_aggregated %>% mutate(model = 'Envir'),
                     cv2_ml_mdg$summary$combined_aggregated %>% mutate(model = 'MLl'),
                     cv2_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLg'),
-                    cv2_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
-                    cv2_all_mdg$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                    cv2_all_mdg$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv2_mle_mdg$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Madagascar')
 
 
 cv1_df_col <- rbind(cv1_covs_col$summary$combined_aggregated %>% mutate(model = 'Envir'),
                     cv1_ml_col$summary$combined_aggregated %>% mutate(model = 'MLl'),
                     cv1_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLg'),
-                    cv1_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
-                    cv1_all_col$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                    cv1_all_col$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv1_mle_col$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Colombia')
 
 cv2_df_col <- rbind(cv2_covs_col$summary$combined_aggregated %>% mutate(model = 'Envir'),
                     cv2_ml_col$summary$combined_aggregated %>% mutate(model = 'MLl'),
                     cv2_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLg'),
-                    cv2_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
-                    cv2_all_col$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                    cv2_all_col$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv2_mle_col$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Colombia')
 
 
 cv1_df_sen <- rbind(cv1_covs_sen$summary$combined_aggregated %>% mutate(model = 'Envir'),
                     cv1_ml_sen$summary$combined_aggregated %>% mutate(model = 'MLl'),
                     cv1_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLg'),
-                    cv1_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
-                    cv1_all_sen$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                    cv1_all_sen$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv1_mle_sen$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Senegal')
 
 cv2_df_sen <- rbind(cv2_covs_sen$summary$combined_aggregated %>% mutate(model = 'Envir'),
                     cv2_ml_sen$summary$combined_aggregated %>% mutate(model = 'MLl'),
                     cv2_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLg'),
-                    cv2_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
-                    cv2_all_sen$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                    cv2_all_sen$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv2_mle_sen$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Senegal')
 
 
+cv1_df_idn <- rbind(cv1_covs_idn$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv1_ml_idn$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv1_mlg_idn$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv1_all_idn$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv1_mle_idn$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                 mutate(country = 'Indonesia')
+
+cv2_df_idn <- rbind(cv2_covs_idn$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv2_ml_idn$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv2_mlg_idn$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv2_all_idn$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv2_mle_idn$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                 mutate(country = 'Indonesia')
 
 
-cv1_df <- rbind(cv1_df_mdg, cv1_df_col) %>% 
-  mutate(model = factor(model, levels = c('Covariates only', 'ML models only', 'Both')))
-cv2_df <- rbind(cv2_df_mdg, cv2_df_col) %>% 
-  mutate(model = factor(model, levels = c('Covariates only', 'ML models only', 'Both')))
 
 
+cv1_df <- rbind(cv1_df_mdg, cv1_df_col, cv1_df_sen, cv1_df_idn) %>% 
+  mutate(model = factor(model, levels = c('Envir', 'MLl', 'Envir + MLl', 'MLg', 'MLl + MLg')))
+cv2_df <- rbind(cv2_df_mdg, cv2_df_col, cv2_df_sen, cv2_df_idn) %>% 
+  mutate(model = factor(model, levels = c('Envir', 'MLl', 'Envir + MLl', 'MLg', 'MLl + MLg')))
 
 
+write.csv(cv1_df, 'figs/random_all_estiamtes.csv')
+write.csv(cv2_df, 'figs/spatial_all_estiamtes.csv')
 
 
 # CV plots
@@ -330,10 +345,12 @@ mysqrt_trans <- function() {
 
 
   p1 <- 
-    ggplot(cv1_df, aes(response, pred_api)) +
+    cv1_df %>% 
+      mutate(model_country = paste(country, model)) %>% 
+    ggplot(aes(response, pred_api)) +
       geom_abline(slope = 1, intercept = 0, linetype = 2, colour = 'grey', size = 4) +
       geom_point(size = 6, alpha = 0.6) +
-      facet_grid(country ~ model) +
+      facet_grid(model_country ~ ., scales = 'free') +
       scale_x_continuous(trans = "mysqrt", breaks = c(0, 20, 100, 300, 500)) + 
       scale_y_continuous(trans = "mysqrt", breaks = c(0, 5, 20, 50, 100, 200, 300)) +
       xlab('Observed API') + 
@@ -342,7 +359,7 @@ mysqrt_trans <- function() {
       theme(text = element_text(size = 50),
             panel.spacing = unit(3, "lines"))
 
-  png('figs/cv1_scatter.png', width = 1600, height = 1100)
+  png('figs/cv1_scatter.png', width = 1600, height = 1500)
   print(p1)
   dev.off()
 
@@ -350,10 +367,12 @@ mysqrt_trans <- function() {
 
 
 p2 <- 
-  ggplot(cv2_df, aes(response, pred_api, colour = factor(fold))) +
+  cv2_df %>% 
+    mutate(model_country = paste(country, model)) %>% 
+  ggplot(aes(response, pred_api)) +
       geom_abline(slope = 1, intercept = 0, linetype = 2, colour = 'grey', size = 4) +
       geom_point(size = 6, alpha = 0.6) +
-      facet_grid(country ~ model, scale = 'free_y') +
+      facet_grid(model_country ~ ., scales = 'free') +
       scale_x_continuous(trans = "mysqrt", breaks = c(0, 20, 100, 300, 500)) + 
       scale_y_continuous(trans = "mysqrt", breaks = c(0, 5, 20, 50, 100, 200, 300)) +
       xlab('Observed API') + 
@@ -363,7 +382,7 @@ p2 <-
       theme(text = element_text(size = 50),
             panel.spacing = unit(3, "lines"))
 
-png('figs/cv2_scatter.png', width = 1600, height = 1100)
+png('figs/cv2_scatter.png', width = 1600, height = 1500)
 print(p2)
 dev.off()
 
@@ -400,6 +419,108 @@ p4[[2]] <-
 
 
 png('figs/col_obs_pred_map_ml.png', width = 1600, height = 1200)
+print(plot_grid(plotlist = p4, rel_widths = c(1, 1.07)))
+dev.off()
+
+
+
+p3 <- obspred_map(data_cv1_mdg, cv1_ml_mdg, trans = 'log10', column = FALSE, mask = TRUE)
+
+p4 <- list()
+
+p4[[1]] <- 
+  p3[[1]] +
+    guides(fill = FALSE) + 
+    xlab('Longitude') + 
+    ylab('Latitude') +
+    ggtitle('Observed data') +
+    theme(text = element_text(size = 30)) +
+    xlim(-80, NA) + 
+    ylim(-4.5, 13)
+
+
+
+p4[[2]] <- 
+  p3[[2]] +
+    xlab('Longitude') + 
+    ylab('') +
+    theme(text = element_text(size = 30)) +
+    ggtitle('Out-of-sample predictions') +
+    scale_fill_viridis_c(trans = 'log10', 
+                         breaks = c(1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3),
+                         labels = trans_format("log10", math_format(10^.x))) +
+    guides(fill = guide_colourbar(barheight = 30, title="API")) 
+
+
+png('figs/mdg_obs_pred_map_ml.png', width = 1600, height = 1200)
+print(plot_grid(plotlist = p4, rel_widths = c(1, 1.07)))
+dev.off()
+
+
+
+p3 <- obspred_map(data_cv1_idn, cv1_ml_idn, trans = 'log10', column = FALSE, mask = TRUE)
+
+p4 <- list()
+
+p4[[1]] <- 
+  p3[[1]] +
+    guides(fill = FALSE) + 
+    xlab('Longitude') + 
+    ylab('Latitude') +
+    ggtitle('Observed data') +
+    theme(text = element_text(size = 30)) +
+    xlim(-80, NA) + 
+    ylim(-4.5, 13)
+
+
+
+p4[[2]] <- 
+  p3[[2]] +
+    xlab('Longitude') + 
+    ylab('') +
+    theme(text = element_text(size = 30)) +
+    ggtitle('Out-of-sample predictions') +
+    scale_fill_viridis_c(trans = 'log10', 
+                         breaks = c(1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3),
+                         labels = trans_format("log10", math_format(10^.x))) +
+    guides(fill = guide_colourbar(barheight = 30, title="API")) 
+
+
+png('figs/idn_obs_pred_map_ml.png', width = 1600, height = 1200)
+print(plot_grid(plotlist = p4, rel_widths = c(1, 1.07)))
+dev.off()
+
+
+
+p3 <- obspred_map(data_cv1_sen, cv1_ml_sen, trans = 'log10', column = FALSE, mask = TRUE)
+
+p4 <- list()
+
+p4[[1]] <- 
+  p3[[1]] +
+    guides(fill = FALSE) + 
+    xlab('Longitude') + 
+    ylab('Latitude') +
+    ggtitle('Observed data') +
+    theme(text = element_text(size = 30)) +
+    xlim(-80, NA) + 
+    ylim(-4.5, 13)
+
+
+
+p4[[2]] <- 
+  p3[[2]] +
+    xlab('Longitude') + 
+    ylab('') +
+    theme(text = element_text(size = 30)) +
+    ggtitle('Out-of-sample predictions') +
+    scale_fill_viridis_c(trans = 'log10', 
+                         breaks = c(1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3),
+                         labels = trans_format("log10", math_format(10^.x))) +
+    guides(fill = guide_colourbar(barheight = 30, title="API")) 
+
+
+png('figs/sen_obs_pred_map_ml.png', width = 1600, height = 1200)
 print(plot_grid(plotlist = p4, rel_widths = c(1, 1.07)))
 dev.off()
 
