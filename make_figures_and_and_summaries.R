@@ -5,9 +5,9 @@
 
 
 if(Sys.info()["user"] != 'anita'){
-  setwd('~/timz/timothy/polygon_ml_wsc')
+  setwd('~/timz/timothy/polygon_ml')
 } else {
-  setwd('~/Z/timothy/polygon_ml_wsc')
+  setwd('~/Z/timothy/polygon_ml')
 }
 
 # Libs
@@ -40,7 +40,7 @@ source('plotting_functions.R')
 
 # Paths
 
-
+# --------------------------------------------------------------------- #
 ## MDG
 
 
@@ -55,6 +55,8 @@ data_cv2_mdg_path <- 'model_outputs/mdg_cv_2.RData'
 cv1_covs_mdg_path <- 'model_outputs/mdg_covs_cv_1.RData'
 cv1_ml_mdg_path <- 'model_outputs/mdg_ml_cv_1.RData'
 cv1_all_mdg_path <- 'model_outputs/mdg_all_cv_1.RData'
+cv1_mle_mdg_path <- 'model_outputs/mdg_mle_cv_1.RData'
+cv1_mlg_mdg_path <- 'model_outputs/mdg_mlg_cv_1.RData'
 
 
 ### CV 2 output
@@ -62,10 +64,14 @@ cv1_all_mdg_path <- 'model_outputs/mdg_all_cv_1.RData'
 cv2_covs_mdg_path <- 'model_outputs/mdg_covs_cv_2.RData'
 cv2_ml_mdg_path <- 'model_outputs/mdg_ml_cv_2.RData'
 cv2_all_mdg_path <- 'model_outputs/mdg_all_cv_2.RData'
+cv2_mle_mdg_path <- 'model_outputs/mdg_mle_cv_2.RData'
+cv2_mlg_mdg_path <- 'model_outputs/mdg_mlg_cv_2.RData'
+
+# --------------------------------------------------------------------- #
 
 
-
-
+# --------------------------------------------------------------------- #
+# col
 
 ### Cross validation object
 
@@ -78,14 +84,72 @@ data_cv2_col_path <- 'model_outputs/col_cv_2.RData'
 cv1_covs_col_path <- 'model_outputs/col_covs_cv_1.RData'
 cv1_ml_col_path <- 'model_outputs/col_ml_cv_1.RData'
 cv1_all_col_path <- 'model_outputs/col_all_cv_1.RData'
-
+cv1_mle_col_path <- 'model_outputs/col_mle_cv_1.RData'
+cv1_mlg_col_path <- 'model_outputs/col_mlg_cv_1.RData'
 
 ### CV 2 output
 
 cv2_covs_col_path <- 'model_outputs/col_covs_cv_2.RData'
 cv2_ml_col_path <- 'model_outputs/col_ml_cv_2.RData'
 cv2_all_col_path <- 'model_outputs/col_all_cv_2.RData'
+cv2_mle_col_path <- 'model_outputs/col_mle_cv_2.RData'
+cv2_mlg_col_path <- 'model_outputs/col_mlg_cv_2.RData'
+# --------------------------------------------------------------------- #
 
+
+# --------------------------------------------------------------------- #
+# sen
+
+### Cross validation object
+
+data_cv1_sen_path <- 'model_outputs/sen_cv_1.RData'
+data_cv2_sen_path <- 'model_outputs/sen_cv_2.RData'
+
+
+### CV 1 output
+
+cv1_covs_sen_path <- 'model_outputs/sen_covs_cv_1.RData'
+cv1_ml_sen_path <- 'model_outputs/sen_ml_cv_1.RData'
+cv1_all_sen_path <- 'model_outputs/sen_all_cv_1.RData'
+cv1_mle_sen_path <- 'model_outputs/sen_mle_cv_1.RData'
+cv1_mlg_sen_path <- 'model_outputs/sen_mlg_cv_1.RData'
+
+### CV 2 output
+
+cv2_covs_sen_path <- 'model_outputs/sen_covs_cv_2.RData'
+cv2_ml_sen_path <- 'model_outputs/sen_ml_cv_2.RData'
+cv2_all_sen_path <- 'model_outputs/sen_all_cv_2.RData'
+cv2_mle_sen_path <- 'model_outputs/sen_mle_cv_2.RData'
+cv2_mlg_sen_path <- 'model_outputs/sen_mlg_cv_2.RData'
+# --------------------------------------------------------------------- #
+
+
+
+# --------------------------------------------------------------------- #
+# idn
+
+### Cross validation object
+
+data_cv1_idn_path <- 'model_outputs/idn_cv_1.RData'
+data_cv2_idn_path <- 'model_outputs/idn_cv_2.RData'
+
+
+### CV 1 output
+
+cv1_covs_idn_path <- 'model_outputs/idn_covs_cv_1.RData'
+cv1_ml_idn_path <- 'model_outputs/idn_ml_cv_1.RData'
+cv1_all_idn_path <- 'model_outputs/idn_all_cv_1.RData'
+cv1_mle_idn_path <- 'model_outputs/idn_mle_cv_1.RData'
+cv1_mlg_idn_path <- 'model_outputs/idn_mlg_cv_1.RData'
+
+### CV 2 output
+
+cv2_covs_idn_path <- 'model_outputs/idn_covs_cv_2.RData'
+cv2_ml_idn_path <- 'model_outputs/idn_ml_cv_2.RData'
+cv2_all_idn_path <- 'model_outputs/idn_all_cv_2.RData'
+cv2_mle_idn_path <- 'model_outputs/idn_mle_cv_2.RData'
+cv2_mlg_idn_path <- 'model_outputs/idn_mlg_cv_2.RData'
+# --------------------------------------------------------------------- #
 
 
 
@@ -104,15 +168,16 @@ load(data_cv2_mdg_path)
 cv1_covs_mdg <- get(load(cv1_covs_mdg_path))
 cv1_ml_mdg <- get(load(cv1_ml_mdg_path))
 cv1_all_mdg <- get(load(cv1_all_mdg_path))
-
+cv1_mle_mdg <- get(load(cv1_mle_mdg_path))
+cv1_mlg_mdg <- get(load(cv1_mlg_mdg_path))
 
 ### CV 2 output
 
 cv2_covs_mdg <- get(load(cv2_covs_mdg_path))
 cv2_ml_mdg <- get(load(cv2_ml_mdg_path))
 cv2_all_mdg <- get(load(cv2_all_mdg_path))
-
-
+cv2_mle_mdg <- get(load(cv2_mle_mdg_path))
+cv2_mlg_mdg <- get(load(cv2_mlg_mdg_path))
 
 
 
@@ -127,15 +192,66 @@ load(data_cv2_col_path)
 cv1_covs_col <- get(load(cv1_covs_col_path))
 cv1_ml_col <- get(load(cv1_ml_col_path))
 cv1_all_col <- get(load(cv1_all_col_path))
-
+cv1_mle_col <- get(load(cv1_mle_col_path))
+cv1_mlg_col <- get(load(cv1_mlg_col_path))
 
 ### CV 2 output
 
 cv2_covs_col <- get(load(cv2_covs_col_path))
 cv2_ml_col <- get(load(cv2_ml_col_path))
 cv2_all_col <- get(load(cv2_all_col_path))
+cv2_mle_col <- get(load(cv2_mle_col_path))
+cv2_mlg_col <- get(load(cv2_mlg_col_path))
 
 
+
+
+### Cross validation object
+
+load(data_cv1_sen_path)
+load(data_cv2_sen_path)
+
+
+### CV 1 output
+
+cv1_covs_sen <- get(load(cv1_covs_sen_path))
+cv1_ml_sen <- get(load(cv1_ml_sen_path))
+cv1_all_sen <- get(load(cv1_all_sen_path))
+cv1_mle_sen <- get(load(cv1_mle_sen_path))
+cv1_mlg_sen <- get(load(cv1_mlg_sen_path))
+
+### CV 2 output
+
+cv2_covs_sen <- get(load(cv2_covs_sen_path))
+cv2_ml_sen <- get(load(cv2_ml_sen_path))
+cv2_all_sen <- get(load(cv2_all_sen_path))
+cv2_mle_sen <- get(load(cv2_mle_sen_path))
+cv2_mlg_sen <- get(load(cv2_mlg_sen_path))
+
+
+
+
+### Cross validation object
+
+load(data_cv1_idn_path)
+load(data_cv2_idn_path)
+
+
+### CV 1 output
+
+cv1_covs_idn <- get(load(cv1_covs_idn_path))
+cv1_ml_idn <- get(load(cv1_ml_idn_path))
+cv1_all_idn <- get(load(cv1_all_idn_path))
+cv1_mle_idn <- get(load(cv1_mle_idn_path))
+cv1_mlg_idn <- get(load(cv1_mlg_idn_path))
+
+### CV 2 output
+
+cv2_covs_idn <- get(load(cv2_covs_idn_path))
+cv2_ml_idn <- get(load(cv2_ml_idn_path))
+cv2_all_idn <- get(load(cv2_all_idn_path))
+cv2_mle_idn <- get(load(cv2_mle_idn_path))
+cv2_mlg_idn <- get(load(cv2_mlg_idn_path))
 
 
 
@@ -145,25 +261,51 @@ cv2_all_col <- get(load(cv2_all_col_path))
 
 # Join all table data.
 
-cv1_df_mdg <- rbind(cv1_covs_mdg$summary$combined_aggregated %>% mutate(model = 'Covariates only'),
-                    cv1_ml_mdg$summary$combined_aggregated %>% mutate(model = 'ML models only'),
-                    cv1_all_mdg$summary$combined_aggregated %>% mutate(model = 'Both')) %>% 
+cv1_df_mdg <- rbind(cv1_covs_mdg$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv1_ml_mdg$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv1_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv1_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv1_all_mdg$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Madagascar')
 
-cv2_df_mdg <- rbind(cv2_covs_mdg$summary$combined_aggregated %>% mutate(model = 'Covariates only'),
-                    cv2_ml_mdg$summary$combined_aggregated %>% mutate(model = 'ML models only'),
-                    cv2_all_mdg$summary$combined_aggregated %>% mutate(model = 'Both')) %>% 
+cv2_df_mdg <- rbind(cv2_covs_mdg$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv2_ml_mdg$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv2_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv2_mlg_mdg$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv2_all_mdg$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Madagascar')
 
-cv1_df_col <- rbind(cv1_covs_col$summary$combined_aggregated %>% mutate(model = 'Covariates only'),
-                    cv1_ml_col$summary$combined_aggregated %>% mutate(model = 'ML models only'),
-                    cv1_all_col$summary$combined_aggregated %>% mutate(model = 'Both')) %>% 
+
+cv1_df_col <- rbind(cv1_covs_col$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv1_ml_col$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv1_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv1_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv1_all_col$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Colombia')
 
-cv2_df_col <- rbind(cv2_covs_col$summary$combined_aggregated %>% mutate(model = 'Covariates only'),
-                    cv2_ml_col$summary$combined_aggregated %>% mutate(model = 'ML models only'),
-                    cv2_all_col$summary$combined_aggregated %>% mutate(model = 'Both')) %>% 
+cv2_df_col <- rbind(cv2_covs_col$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv2_ml_col$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv2_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv2_mlg_col$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv2_all_col$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
                  mutate(country = 'Colombia')
+
+
+cv1_df_sen <- rbind(cv1_covs_sen$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv1_ml_sen$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv1_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv1_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv1_all_sen$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                 mutate(country = 'Senegal')
+
+cv2_df_sen <- rbind(cv2_covs_sen$summary$combined_aggregated %>% mutate(model = 'Envir'),
+                    cv2_ml_sen$summary$combined_aggregated %>% mutate(model = 'MLl'),
+                    cv2_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLg'),
+                    cv2_mlg_sen$summary$combined_aggregated %>% mutate(model = 'MLl + MLg'),
+                    cv2_all_sen$summary$combined_aggregated %>% mutate(model = 'Envir + MLl')) %>% 
+                 mutate(country = 'Senegal')
+
+
 
 
 cv1_df <- rbind(cv1_df_mdg, cv1_df_col) %>% 
