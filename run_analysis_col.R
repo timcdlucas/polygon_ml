@@ -159,6 +159,16 @@ data_all_cov <- load_data(PR_path,
                           pr_country = 'country',
                           api_year = 2015)
 
+data_mle_cov <- load_data(PR_path, 
+                          API_path, 
+                          pop_path, 
+                          c(cov_raster_paths, ml_local_raster_paths), 
+                          shapefile_path, 
+                          shapefile_pattern = '.shp$', 
+                          useiso3 = 'COL', 
+                          admin_unit_level = 'ADMIN2',
+                          pr_country = 'country',
+                          api_year = 2015)
 
 # pre analysis
 
@@ -227,6 +237,24 @@ data_col_all <- process_data(
 save(data_col_all, file = 'model_outputs/col_all_data.RData')
 
 
+
+data_col_mle <- process_data(
+  binomial_positive = data_mle_cov$pr$positive,
+  binomial_n = data_mle_cov$pr$examined,
+  coords = data_mle_cov$pr[, c('longitude', 'latitude')],
+  polygon_response = data_mle_cov$api$api_mean,
+  polygon_population = data_mle_cov$api$population,
+  shapefile_id = data_mle_cov$api$shapefile_id,
+  shps_id_column = 'area_id',
+  shapefiles = data_mle_cov$shapefiles,
+  pop_raster = data_mle_cov$pop,
+  cov_rasters = data_mle_cov$covs,
+  useiso3 = 'COL',
+  transform = NULL)
+
+save(data_col_mle, file = 'model_outputs/col_mle_data.RData')
+
+
 autoplot(data_col_cov, pr_limits = c(0, 0.3))
 autoplot(data_col_cov, pr_limits = c(0, 0.3), trans = 'log1p')
 
@@ -251,6 +279,9 @@ data_cv1_col_mlg <- cv_random_folds(data_col_mlg, k = 6,
 data_cv1_col_all <- cv_random_folds(data_col_all, k = 6, 
                                     polygon_folds = attr(data_cv1_col, 'polygon_folds'),
                                     pr_folds = attr(data_cv1_col, 'pr_folds'))
+data_cv1_col_mle <- cv_random_folds(data_col_mle, k = 6, 
+                                    polygon_folds = attr(data_cv1_col, 'polygon_folds'),
+                                    pr_folds = attr(data_cv1_col, 'pr_folds'))
 
 
 autoplot(data_cv1_col, jitter = 0)
@@ -271,7 +302,9 @@ data_cv2_col_mlg <- cv_spatial_folds(data_col_mlg, k = 3,
 data_cv2_col_all <- cv_spatial_folds(data_col_all, k = 3, 
                                      polygon_folds = attr(data_cv2_col, 'polygon_folds'),
                                      pr_folds = attr(data_cv2_col, 'pr_folds'))
-
+data_cv2_col_mle <- cv_spatial_folds(data_col_mle, k = 3, 
+                                     polygon_folds = attr(data_cv2_col, 'polygon_folds'),
+                                     pr_folds = attr(data_cv2_col, 'pr_folds'))
 autoplot(data_cv2_col, jitter = 0)
 autoplot(data_cv2_col_ml, jitter = 0)
 
@@ -286,7 +319,7 @@ use_polygons <- 1
 # run models
 # Run full model to get a handle on things.
 
-arg_list <- list(prior_rho_min = 1, # 
+arg_list1 <- list(prior_rho_min = 1, # 
                  prior_rho_prob = 0.0001, # Want p(rho < 3) = 0.0001
                  prior_sigma_max = 1, # Want p(sd > 1) = 0.0001 (would explain most of prev). 
                  prior_sigma_prob = 0.0001,
@@ -305,7 +338,45 @@ arg_list <- list(prior_rho_min = 1, #
                  use_points = use_points)
 
 
-full_model <- fit_model(data_col_cov, mesh_col, its = 1000, model.args = arg_list)
+arg_list2 <- list(prior_rho_min = 1, # 
+                 prior_rho_prob = 0.0001, # Want p(rho < 3) = 0.0001
+                 prior_sigma_max = 1, # Want p(sd > 1) = 0.0001 (would explain most of prev). 
+                 prior_sigma_prob = 0.0001,
+                 prior_iideffect_sd_max = 0.05, 
+                 # The difference between m_low_pf and LCI(pois(m_mean_pf)), then converted to inc rate, then to prev ranges around 0-0.025. 
+                 # The 0.975 quantile of that (two sided) distribution is 0.005 prevalence. 
+                 # To explain 0.005 prevalence, we need a norm of 0.05. Fin.
+                 prior_iideffect_sd_prob = 0.0001, # Made this stronger because too much iid.
+                 prior_iideffect_pr_sd_max = 0.3, # Max difference between PR points within a cell (with n > 500)
+                 prior_iideffect_pr_sd_prob = 0.0001,
+                 priormean_intercept = 0,
+                 priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
+                 priormean_slope = 0.2, 
+                 priorsd_slope = 0.4, # Explains between 0.004 and 0.27 prevalence. 1 covariate shouldn't explain between 0 and 0.6 (range of prev).
+                 use_polygons = use_polygons,
+                 use_points = use_points)
+
+
+arg_list3 <- list(prior_rho_min = 1, # 
+                 prior_rho_prob = 0.0001, # Want p(rho < 3) = 0.0001
+                 prior_sigma_max = 1, # Want p(sd > 1) = 0.0001 (would explain most of prev). 
+                 prior_sigma_prob = 0.0001,
+                 prior_iideffect_sd_max = 0.05, 
+                 # The difference between m_low_pf and LCI(pois(m_mean_pf)), then converted to inc rate, then to prev ranges around 0-0.025. 
+                 # The 0.975 quantile of that (two sided) distribution is 0.005 prevalence. 
+                 # To explain 0.005 prevalence, we need a norm of 0.05. Fin.
+                 prior_iideffect_sd_prob = 0.0001, # Made this stronger because too much iid.
+                 prior_iideffect_pr_sd_max = 0.3, # Max difference between PR points within a cell (with n > 500)
+                 prior_iideffect_pr_sd_prob = 0.0001,
+                 priormean_intercept = 0,
+                 priorsd_intercept = 2,  # Indonesia has prev lowish. But want intercept to take whatever value it likes.
+                 priormean_slope = 0.1, 
+                 priorsd_slope = 0.4, # Explains between 0.004 and 0.27 prevalence. 1 covariate shouldn't explain between 0 and 0.6 (range of prev).
+                 use_polygons = use_polygons,
+                 use_points = use_points)
+
+
+full_model <- fit_model(data_col_cov, mesh_col, its = 1000, model.args = arg_list1)
 autoplot(full_model)
 
 png('figs/full_model_covs_in_sample_map.png')
@@ -340,7 +411,7 @@ save(full_model, file = 'model_outputs/full_model_covs_col.RData')
 
 
 
-full_model_ml <- fit_model(data_col_ml, mesh_col, its = 1000, model.args = arg_list)
+full_model_ml <- fit_model(data_col_ml, mesh_col, its = 1000, model.args = arg_list2)
 autoplot(full_model_ml)
 
 png('figs/full_model_ml_in_sample_map.png')
@@ -373,7 +444,7 @@ ggsave('figs/col_full_model_ml_in_sample.png')
 save(full_model_ml, file = 'model_outputs/full_model_ml_col.RData')
 
 
-full_model_mlg <- fit_model(data_col_mlg, mesh_col, its = 1000, model.args = arg_list)
+full_model_mlg <- fit_model(data_col_mlg, mesh_col, its = 1000, model.args = arg_list2)
 autoplot(full_model_mlg)
 
 png('figs/full_model_mlg_in_sample_map.png')
@@ -409,7 +480,7 @@ save(full_model_mlg, file = 'model_outputs/full_model_mlg_col.RData')
 
 
 
-full_model_all <- fit_model(data_col_all, mesh_col, its = 1000, model.args = arg_list)
+full_model_all <- fit_model(data_col_all, mesh_col, its = 1000, model.args = arg_list3)
 autoplot(full_model_all)
 
 png('figs/full_model_all_in_sample_map.png')
@@ -438,7 +509,7 @@ autoplot(in_sample_all, CI = TRUE)
 autoplot(in_sample_all, trans = 'log1p', CI = TRUE)
 ggsave('figs/col_full_model_all_in_sample.png')
 
-save(in_sample_all, file = 'model_outputs/full_model_all_col_all.RData')
+save(full_model_all, file = 'model_outputs/full_model_all_col_all.RData')
 
 
 
@@ -448,7 +519,7 @@ save(in_sample_all, file = 'model_outputs/full_model_all_col_all.RData')
 cat('Start cv1 model 1\n')
 
 cv1_output1 <- run_cv(data_cv1_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 6)
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 20, cores = 6)
 obspred_map(data_cv1_col, cv1_output1, column = FALSE, mask = TRUE)
 ggsave('figs/col_covs_only_obspred_map.png')
 obspred_map(data_cv1_col, cv1_output1, trans = 'log10', column = FALSE, mask = TRUE)
@@ -462,7 +533,7 @@ save(cv1_output1, file = 'model_outputs/col_covs_cv_1.RData')
 cat('Start cv1 model 2\n')
 
 cv1_output2 <- run_cv(data_cv1_col_ml, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 6)
+                      model.args = arg_list2, CI = 0.8, parallel_delay = 40, cores = 6)
 obspred_map(data_cv1_col, cv1_output2, column = FALSE)
 ggsave('figs/col_ml_only_obspred_map.png')
 obspred_map(data_cv1_col, cv1_output2, trans = 'log10', column = FALSE)
@@ -476,7 +547,7 @@ save(cv1_output2, file = 'model_outputs/col_ml_cv_1.RData')
 cat('Start cv1 model 3\n')
 
 cv1_output3 <- run_cv(data_cv1_col_all, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 6)
+                      model.args = arg_list3, CI = 0.8, parallel_delay = 20, cores = 6)
 obspred_map(data_cv1_col, cv1_output3, column = FALSE)
 ggsave('figs/col_all_obspred_map.png')
 obspred_map(data_cv1_col, cv1_output3, trans = 'log10', column = FALSE)
@@ -492,7 +563,7 @@ save(cv1_output3, file = 'model_outputs/col_all_cv_1.RData')
 cat('Start cv1 model 4\n')
 
 cv1_output4 <- run_cv(data_cv1_col_mlg, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 20, cores = 6)
+                      model.args = arg_list2, CI = 0.8, parallel_delay = 20, cores = 6)
 obspred_map(data_cv1_col, cv1_output4, column = FALSE)
 ggsave('figs/col_mlg_obspred_map.png')
 obspred_map(data_cv1_col, cv1_output4, trans = 'log10', column = FALSE)
@@ -520,7 +591,7 @@ cv1_output3$summary$pr_metrics
 cat('Start cv2 model 1')
 
 cv2_output1 <- run_cv(data_cv2_col, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 40, cores = 3)
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 40, cores = 3)
 obspred_map(data_cv2_col, cv2_output1, column = FALSE, mask = TRUE)
 ggsave('figs/col_covs_only_obspred_map2.png')
 obspred_map(data_cv2_col, cv2_output1, trans = 'log10', column = FALSE, mask = TRUE)
@@ -535,7 +606,7 @@ save(cv2_output1, file = 'model_outputs/col_covs_cv_2.RData')
 cat('Start cv2 model 2')
 
 cv2_output2 <- run_cv(data_cv2_col_ml, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 30, cores = 3)
+                      model.args = arg_list2, CI = 0.8, parallel_delay = 30, cores = 3)
 obspred_map(data_cv2_col, cv2_output2, column = FALSE, mask = TRUE)
 ggsave('figs/col_ml_only_obspred_map2.png')
 obspred_map(data_cv2_col, cv2_output2, trans = 'log10', column = FALSE, mask = TRUE)
@@ -550,7 +621,7 @@ save(cv2_output2, file = 'model_outputs/col_ml_cv_2.RData')
 cat('Start cv2 model 3')
 
 cv2_output3 <- run_cv(data_cv2_col_all, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 3)
+                      model.args = arg_list3, CI = 0.8, parallel_delay = 0, cores = 3)
 obspred_map(data_cv2_col, cv2_output3, column = FALSE, mask = TRUE)
 ggsave('figs/col_all_obspred_map2.png')
 obspred_map(data_cv2_col, cv2_output3, trans = 'log10', column = FALSE, mask = TRUE)
@@ -568,7 +639,7 @@ save(cv2_output3, file = 'model_outputs/col_all_cv_2.RData')
 cat('Start cv2 model 4')
 
 cv2_output4 <- run_cv(data_cv2_col_mlg, mesh_col, its = 1000, 
-                      model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 3)
+                      model.args = arg_list2, CI = 0.8, parallel_delay = 0, cores = 3)
 obspred_map(data_cv2_col, cv2_output4, column = FALSE, mask = TRUE)
 ggsave('figs/col_mlg_obspred_map2.png')
 obspred_map(data_cv2_col, cv2_output4, trans = 'log10', column = FALSE, mask = TRUE)
@@ -591,6 +662,49 @@ cv2_output2$summary$pr_metrics
 cv2_output3$summary$pr_metrics
 
 
+
+
+
+
+# -------------------------------------------------------------- #
+
+
+cat('Start cv1 model 5\n')
+
+cv1_output5 <- run_cv(data_cv1_col_mle, mesh_col, its = 1000, 
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 20, cores = 6)
+obspred_map(data_cv1_col, cv1_output5, column = FALSE)
+ggsave('figs/col_mle_obspred_map.png')
+obspred_map(data_cv1_col, cv1_output5, trans = 'log10', column = FALSE)
+ggsave('figs/col_mle_obspred_map_log.png')
+autoplot(cv1_output5, type = 'obs_preds', CI = FALSE)
+ggsave('figs/col_mle_obspred.png')
+autoplot(cv1_output5, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_mle_obspred_log.png')
+
+save(cv1_output5, file = 'model_outputs/col_mle_cv_1.RData')
+
+
+cat('Start cv2 model 5')
+
+cv2_output5 <- run_cv(data_cv2_col_mle, mesh_col, its = 1000, 
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 0, cores = 7)
+obspred_map(data_cv2_col, cv2_output5, column = FALSE, mask = TRUE)
+ggsave('figs/col_mle_obspred_map2.png')
+obspred_map(data_cv2_col, cv2_output5, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/col_mle_obspred_map_log2.png')
+autoplot(cv2_output5, type = 'obs_preds', CI = FALSE)
+ggsave('figs/col_mle_obspred2.png')
+autoplot(cv2_output5, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/col_mle_only_obspred_log2.png')
+
+save(cv2_output5, file = 'model_outputs/col_mle_cv_2.RData')
+
+
+
+
+cv1_output5$summary$polygon_metrics
+cv2_output5$summary$polygon_metrics
 
 
 

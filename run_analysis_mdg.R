@@ -160,6 +160,17 @@ data_all_cov <- load_data(PR_path,
                           api_year = 2013)
 
 
+data_mle_cov <- load_data(PR_path, 
+                          API_path, 
+                          pop_path, 
+                          c(cov_raster_paths, ml_local_raster_paths), 
+                          shapefile_path, 
+                          shapefile_pattern = '.shp$', 
+                          useiso3 = 'MDG', 
+                          admin_unit_level = 'ADMIN3',
+                          pr_country = 'country',
+                          api_year = 2013)
+
 # pre analysis
 
 data_mdg_cov <- process_data(
@@ -227,6 +238,24 @@ data_mdg_all <- process_data(
 save(data_mdg_all, file = 'model_outputs/mdg_all_data.RData')
 
 
+
+data_mdg_mle <- process_data(
+  binomial_positive = data_mle_cov$pr$positive,
+  binomial_n = data_mle_cov$pr$examined,
+  coords = data_mle_cov$pr[, c('longitude', 'latitude')],
+  polygon_response = data_mle_cov$api$api_mean,
+  polygon_population = data_mle_cov$api$population,
+  shapefile_id = data_mle_cov$api$shapefile_id,
+  shps_id_column = 'area_id',
+  shapefiles = data_mle_cov$shapefiles,
+  pop_raster = data_mle_cov$pop,
+  cov_rasters = data_mle_cov$covs,
+  useiso3 = 'MDG',
+  transform = NULL)
+
+save(data_mdg_mle, file = 'model_outputs/mdg_mle_data.RData')
+
+
 autoplot(data_mdg_cov, pr_limits = c(0, 0.3))
 autoplot(data_mdg_cov, pr_limits = c(0, 0.3), trans = 'log1p')
 
@@ -251,7 +280,9 @@ data_cv1_mdg_mlg <- cv_random_folds(data_mdg_mlg, k = 6,
 data_cv1_mdg_all <- cv_random_folds(data_mdg_all, k = 6, 
                                     polygon_folds = attr(data_cv1_mdg, 'polygon_folds'),
                                     pr_folds = attr(data_cv1_mdg, 'pr_folds'))
-
+data_cv1_mdg_mle <- cv_random_folds(data_mdg_mle, k = 6, 
+                                    polygon_folds = attr(data_cv1_mdg, 'polygon_folds'),
+                                    pr_folds = attr(data_cv1_mdg, 'pr_folds'))
 
 autoplot(data_cv1_mdg, jitter = 0)
 autoplot(data_cv1_mdg_ml, jitter = 0)
@@ -269,6 +300,9 @@ data_cv2_mdg_mlg <- cv_spatial_folds(data_mdg_mlg, k = 3,
                                     polygon_folds = attr(data_cv2_mdg, 'polygon_folds'),
                                     pr_folds = attr(data_cv2_mdg, 'pr_folds'))
 data_cv2_mdg_all <- cv_spatial_folds(data_mdg_all, k = 3, 
+                                     polygon_folds = attr(data_cv2_mdg, 'polygon_folds'),
+                                     pr_folds = attr(data_cv2_mdg, 'pr_folds'))
+data_cv2_mdg_mle <- cv_spatial_folds(data_mdg_mle, k = 3, 
                                      polygon_folds = attr(data_cv2_mdg, 'polygon_folds'),
                                      pr_folds = attr(data_cv2_mdg, 'pr_folds'))
 
@@ -630,6 +664,50 @@ cv2_output3$summary$pr_metrics
 
 
 
+
+
+
+
+
+# -------------------------------------------------------------- #
+
+
+cat('Start cv1 model 5\n')
+
+cv1_output5 <- run_cv(data_cv1_mdg_mle, mesh_mdg, its = 1000, 
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 20, cores = 6)
+obspred_map(data_cv1_mdg, cv1_output5, column = FALSE)
+ggsave('figs/mdg_mle_obspred_map.png')
+obspred_map(data_cv1_mdg, cv1_output5, trans = 'log10', column = FALSE)
+ggsave('figs/mdg_mle_obspred_map_log.png')
+autoplot(cv1_output5, type = 'obs_preds', CI = FALSE)
+ggsave('figs/mdg_mle_obspred.png')
+autoplot(cv1_output5, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/mdg_mle_obspred_log.png')
+
+save(cv1_output5, file = 'model_outputs/mdg_mle_cv_1.RData')
+
+
+cat('Start cv2 model 5')
+
+cv2_output5 <- run_cv(data_cv2_mdg_mle, mesh_mdg, its = 1000, 
+                      model.args = arg_list1, CI = 0.8, parallel_delay = 0, cores = 7)
+obspred_map(data_cv2_mdg, cv2_output5, column = FALSE, mask = TRUE)
+ggsave('figs/mdg_mle_obspred_map2.png')
+obspred_map(data_cv2_mdg, cv2_output5, trans = 'log10', column = FALSE, mask = TRUE)
+ggsave('figs/mdg_mle_obspred_map_log2.png')
+autoplot(cv2_output5, type = 'obs_preds', CI = FALSE)
+ggsave('figs/mdg_mle_obspred2.png')
+autoplot(cv2_output5, type = 'obs_preds', CI = FALSE, tran = 'log1p')
+ggsave('figs/mdg_mle_only_obspred_log2.png')
+
+save(cv2_output5, file = 'model_outputs/mdg_mle_cv_2.RData')
+
+
+
+
+cv1_output5$summary$polygon_metrics
+cv2_output5$summary$polygon_metrics
 
 
 

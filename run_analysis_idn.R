@@ -659,7 +659,7 @@ save(cv1_output5, file = 'model_outputs/idn_mle_cv_1.RData')
 
 cat('Start cv2 model 5')
 
-cv2_output5 <- run_cv(data_cv2_idn_ml3, mesh_idn, its = 1000, 
+cv2_output5 <- run_cv(data_cv2_idn_mle, mesh_idn, its = 1000, 
                       model.args = arg_list, CI = 0.8, parallel_delay = 0, cores = 7)
 obspred_map(data_cv2_idn, cv2_output5, column = FALSE, mask = TRUE)
 ggsave('figs/idn_mle_obspred_map2.png')
